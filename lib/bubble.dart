@@ -126,12 +126,12 @@ class Bubble extends CircleComponent
     if (_popping) return;
 
     if (other is Bubble && !other._popping) {
-      // Two bubble borders collide — both pop
-      _pop();
-      other._pop();
+      // Two bubble borders collide — both pop, reset score
+      _popByCollision();
+      other._popByCollision();
     } else if (other is ScreenHitbox) {
-      // Bubble border touches screen edge — pop
-      _pop();
+      // Bubble border touches screen edge — pop, reset score
+      _popByCollision();
     }
   }
 
@@ -142,6 +142,15 @@ class Bubble extends CircleComponent
     _popRadius = radius;
     _generateParticles();
     game.onBubblePopped();
+  }
+
+  void _popByCollision() {
+    if (_popping) return;
+    _popping = true;
+    _popElapsed = 0.0;
+    _popRadius = radius;
+    _generateParticles();
+    game.onBubbleCollision();
   }
 
   void _generateParticles() {

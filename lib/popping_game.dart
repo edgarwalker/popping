@@ -16,9 +16,28 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   int _currentLevel = 0; // index into levels list (0–6)
 
   late TextComponent _scoreText;
-  late TextComponent _levelText;
 
   LevelConfig get currentLevelConfig => levels[_currentLevel];
+
+  void setLevel(int levelIndex) {
+    _currentLevel = levelIndex.clamp(0, levels.length - 1);
+    _resetGame();
+  }
+
+  void _resetGame() {
+    // Reset score
+    _score = 0;
+    _scoreText.text = 'Score: 0';
+
+    // Remove all existing bubbles
+    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+
+    // Reset spawn timer and spawn fresh bubbles
+    _spawnTimer = 0.0;
+    for (int i = 0; i < currentLevelConfig.maxBubbles; i++) {
+      _spawnBubble();
+    }
+  }
 
   @override
   Color backgroundColor() => const Color(0xFF1A1A2E);
@@ -41,21 +60,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
     );
     add(_scoreText);
 
-    _levelText = TextComponent(
-      text: 'Level: 1',
-      position: Vector2(20, 70),
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Colors.white70,
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-    add(_levelText);
-
-    // Spawn a few initial bubbles
-    for (int i = 0; i < 3; i++) {
+    // Spawn initial bubbles based on level
+    for (int i = 0; i < currentLevelConfig.maxBubbles; i++) {
       _spawnBubble();
     }
   }
@@ -67,7 +73,14 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
     _spawnTimer += dt;
     if (_spawnTimer >= _spawnInterval) {
       _spawnTimer = 0.0;
-      _spawnBubble();
+      // Spawn multiple bubbles per tick based on level
+      final activeBubbles =
+          children.whereType<Bubble>().where((b) => !b.isPopping).length;
+      final canSpawn = currentLevelConfig.maxBubbles - activeBubbles;
+      final toSpawn = currentLevelConfig.spawnCount.clamp(0, canSpawn);
+      for (int i = 0; i < toSpawn; i++) {
+        _spawnBubble();
+      }
     }
   }
 
@@ -115,12 +128,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   void onBubblePopped() {
     _score++;
     _scoreText.text = 'Score: $_score';
+  }
 
-    // Advance level every 10 pops, up to level 7
-    final newLevel = (_score ~/ 10).clamp(0, levels.length - 1);
-    if (newLevel != _currentLevel) {
-      _currentLevel = newLevel;
-      _levelText.text = 'Level: ${_currentLevel + 1}';
-    }
+  void onBubbleCollision() {
+    // Collision — reset score
+    _score = 0;
+    _scoreText.text = 'Score: 0';
   }
 }
