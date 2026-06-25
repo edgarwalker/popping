@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import 'bubble.dart';
+import 'level_config.dart';
 
 class PoppingGame extends FlameGame with HasCollisionDetection {
   final Random _random = Random();
@@ -12,8 +13,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   double _spawnTimer = 0.0;
   final double _spawnInterval = 1.5; // seconds between spawns
   int _score = 0;
+  int _currentLevel = 0; // index into levels list (0–6)
 
   late TextComponent _scoreText;
+  late TextComponent _levelText;
+
+  LevelConfig get currentLevelConfig => levels[_currentLevel];
 
   @override
   Color backgroundColor() => const Color(0xFF1A1A2E);
@@ -35,6 +40,19 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
       ),
     );
     add(_scoreText);
+
+    _levelText = TextComponent(
+      text: 'Level: 1',
+      position: Vector2(20, 70),
+      textRenderer: TextPaint(
+        style: const TextStyle(
+          color: Colors.white70,
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+    add(_levelText);
 
     // Spawn a few initial bubbles
     for (int i = 0; i < 3; i++) {
@@ -87,7 +105,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
 
     // Only spawn if we found a valid position with enough space
     if (spawnPos != null) {
-      final growthDuration = 2.5 + _random.nextDouble() * 2.0;
+      final baseSpeed = currentLevelConfig.growthSpeed;
+      // Add slight randomness (±15%) around the level's growth speed
+      final growthDuration = baseSpeed * (0.85 + _random.nextDouble() * 0.30);
       add(Bubble(position: spawnPos, growthDuration: growthDuration));
     }
   }
@@ -95,5 +115,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   void onBubblePopped() {
     _score++;
     _scoreText.text = 'Score: $_score';
+
+    // Advance level every 10 pops, up to level 7
+    final newLevel = (_score ~/ 10).clamp(0, levels.length - 1);
+    if (newLevel != _currentLevel) {
+      _currentLevel = newLevel;
+      _levelText.text = 'Level: ${_currentLevel + 1}';
+    }
   }
 }
