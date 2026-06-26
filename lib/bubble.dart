@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 import 'popping_game.dart';
 
@@ -20,6 +21,7 @@ class Bubble extends CircleComponent
   final double _growthDuration;
   double _elapsed = 0.0;
   bool _popping = false;
+  bool _crashedByCollision = false;
   double _popRadius = 0.0;
 
   bool get isPopping => _popping;
@@ -91,22 +93,36 @@ class Bubble extends CircleComponent
   }
 
   void _renderParticles(Canvas canvas) {
-    final progress = (_popElapsed / _popDuration).clamp(0.0, 1.0);
+    final duration = _crashedByCollision ? _popDuration * 0.7 : _popDuration;
+    final progress = (_popElapsed / duration).clamp(0.0, 1.0);
     final opacity = 1.0 - progress;
 
-    // The canvas origin is at the top-left of the component's bounding box.
-    // The bubble's visual center is at (_popRadius, _popRadius) in local coords.
     final centerX = _popRadius;
     final centerY = _popRadius;
 
     for (final particle in _particles) {
-      final dx = centerX + cos(particle.angle) * particle.distance * progress;
-      final dy = centerY + sin(particle.angle) * particle.distance * progress;
+      final speed = _crashedByCollision ? 1.5 : 1.0;
+      final dx =
+          centerX + cos(particle.angle) * particle.distance * progress * speed;
+      final dy =
+          centerY + sin(particle.angle) * particle.distance * progress * speed;
       final particleSize = particle.size * (1.0 - progress * 0.5);
 
       final paint = Paint()..color = particle.color.withValues(alpha: opacity);
 
-      canvas.drawCircle(Offset(dx, dy), particleSize, paint);
+      if (_crashedByCollision) {
+        // Draw sharp squares for crash
+        canvas.drawRect(
+          Rect.fromCenter(
+            center: Offset(dx, dy),
+            width: particleSize,
+            height: particleSize,
+          ),
+          paint,
+        );
+      } else {
+        canvas.drawCircle(Offset(dx, dy), particleSize, paint);
+      }
     }
   }
 
@@ -126,9 +142,10 @@ class Bubble extends CircleComponent
     if (_popping) return;
 
     if (other is Bubble && !other._popping) {
-      // Two bubble borders collide — both pop, reset score
-      _popByCollision();
-      other._popByCollision();
+      // Crash both bubbles first (set animation), then notify game
+      _crashPop();
+      other._crashPop();
+      game.onBubblePoppedByCollision();
     }
     // Screen edge collisions are ignored — bubbles can touch edges freely
   }
@@ -154,13 +171,16 @@ class Bubble extends CircleComponent
     _generateParticles();
   }
 
-  void _popByCollision() {
+  /// Crash animation only — no game notification.
+  void _crashPop() {
     if (_popping) return;
     _popping = true;
+    _crashedByCollision = true;
     _popElapsed = 0.0;
     _popRadius = radius;
-    _generateParticles();
-    game.onBubblePoppedByCollision();
+    _generateCrashParticles();
+    // Vibrate on crash
+    HapticFeedback.vibrate();
   }
 
   void _generateParticles() {
@@ -173,6 +193,44 @@ class Bubble extends CircleComponent
           distance: _popRadius + random.nextDouble() * 40.0,
           size: 4.0 + random.nextDouble() * 6.0,
           color: _color,
+        ),
+      );
+    }
+  }
+
+  void _generateCrashParticles() {
+    final random = Random();
+    // Many small sharp fragments — explosive burst
+    for (int i = 0; i < 50; i++) {
+      final angle = random.nextDouble() * 2 * pi;
+      _particles.add(
+        _PopParticle(
+          angle: angle,
+          distance: _popRadius * 0.5 + random.nextDouble() * 100.0,
+          size: 1.0 + random.nextDouble() * 3.5,
+          color:
+              Color.lerp(
+                _color,
+                const Color(0xFFFF3333),
+                0.5 + random.nextDouble() * 0.3,
+              )!,
+        ),
+      );
+    }
+    // Add a few bigger orange/yellow spark pieces
+    for (int i = 0; i < 8; i++) {
+      final angle = random.nextDouble() * 2 * pi;
+      _particles.add(
+        _PopParticle(
+          angle: angle,
+          distance: _popRadius + random.nextDouble() * 50.0,
+          size: 4.0 + random.nextDouble() * 4.0,
+          color:
+              Color.lerp(
+                const Color(0xFFFF8800),
+                const Color(0xFFFFFF00),
+                random.nextDouble(),
+              )!,
         ),
       );
     }
