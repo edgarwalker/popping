@@ -36,8 +36,10 @@ class _GamePageState extends State<GamePage> {
   int _score = 0;
   bool _settingsOpen = false;
   bool _waitingToStart = true;
+  bool _isGameOver = false;
   int _adventureTarget = 1000;
   Timer? _holdTimer;
+  Timer? _timeDisplayTimer;
 
   void _setAdventureTarget(int value) {
     _adventureTarget = value.clamp(50, 10000000000);
@@ -52,7 +54,6 @@ class _GamePageState extends State<GamePage> {
   static const List<String> _modes = ['Level', 'Score', 'Adventure'];
 
   @override
-  @override
   void initState() {
     super.initState();
     _game.onScoreUpdate = (score) {
@@ -66,8 +67,10 @@ class _GamePageState extends State<GamePage> {
       });
     };
     _game.onGameOver = () {
+      _timeDisplayTimer?.cancel();
       setState(() {
         _waitingToStart = true;
+        _isGameOver = true;
         _score = 0;
       });
       _game.clearState();
@@ -81,11 +84,16 @@ class _GamePageState extends State<GamePage> {
       _settingsOpen = !_settingsOpen;
       if (_settingsOpen) {
         _game.paused = true;
+        _timeDisplayTimer?.cancel();
       } else {
         if (_waitingToStart) {
           _game.paused = true;
         } else {
           _game.paused = false;
+          _timeDisplayTimer?.cancel();
+          _timeDisplayTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+            if (mounted) setState(() {});
+          });
         }
       }
     });
@@ -94,9 +102,15 @@ class _GamePageState extends State<GamePage> {
   void _startGame() {
     setState(() {
       _waitingToStart = false;
+      _isGameOver = false;
       _settingsOpen = false;
     });
     _game.startImmediately();
+    // Start periodic timer to update time display
+    _timeDisplayTimer?.cancel();
+    _timeDisplayTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
@@ -114,11 +128,30 @@ class _GamePageState extends State<GamePage> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  if (_selectedMode != 0)
+                  // Left side content
+                  if (_selectedMode == 0)
                     Text(
-                      _selectedMode == 2
-                          ? 'Score: $_score / $_adventureTarget'
-                          : 'Score: $_score',
+                      'Level ${_selectedLevel + 1}',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  if (_selectedMode == 1)
+                    Text(
+                      'Score: $_score',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  if (_selectedMode == 2)
+                    Text(
+                      'Score: $_score / $_adventureTarget',
                       style: const TextStyle(
                         color: CupertinoColors.white,
                         fontSize: 18,
@@ -127,6 +160,18 @@ class _GamePageState extends State<GamePage> {
                       ),
                     ),
                   const Spacer(),
+                  // Center: time for adventure mode
+                  if (_selectedMode == 2)
+                    Text(
+                      'Time: ${_game.elapsedTime.toInt()}s',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  if (_selectedMode == 2) const Spacer(),
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onTap: _showSettingsPanel,
@@ -152,7 +197,7 @@ class _GamePageState extends State<GamePage> {
                 width: 240,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0x00000000),
+                  color: const Color(0xF0101020),
                   border: Border.all(
                     color: CupertinoColors.white.withValues(alpha: 0.4),
                     width: 1,
@@ -195,45 +240,38 @@ class _GamePageState extends State<GamePage> {
                         });
                       },
                     ),
-                    const SizedBox(height: 6),
-                    // Level slider
-                    Text(
-                      'Level: ${_selectedLevel + 1}',
-                      style: TextStyle(
-                        color:
-                            _selectedMode != 0
-                                ? CupertinoColors.systemGrey
-                                : CupertinoColors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
+                    // Level slider — only shown in Level mode
+                    if (_selectedMode == 0) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Level: ${_selectedLevel + 1}',
+                        style: const TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Opacity(
-                      opacity: _selectedMode != 0 ? 0.4 : 1.0,
-                      child: CupertinoSlider(
+                      const SizedBox(height: 4),
+                      CupertinoSlider(
                         min: 0,
                         max: 6,
                         divisions: 6,
                         value: _selectedLevel.toDouble(),
-                        onChanged:
-                            _selectedMode != 0
-                                ? null
-                                : (value) {
-                                  final newLevel = value.round();
-                                  if (newLevel != _selectedLevel) {
-                                    setState(() {
-                                      _selectedLevel = newLevel;
-                                      _waitingToStart = true;
-                                      _score = 0;
-                                    });
-                                    _game.setLevel(newLevel);
-                                    _game.clearState();
-                                  }
-                                },
+                        onChanged: (value) {
+                          final newLevel = value.round();
+                          if (newLevel != _selectedLevel) {
+                            setState(() {
+                              _selectedLevel = newLevel;
+                              _waitingToStart = true;
+                              _score = 0;
+                            });
+                            _game.setLevel(newLevel);
+                            _game.clearState();
+                          }
+                        },
                       ),
-                    ),
+                    ],
                     // Target field for Adventure mode
                     if (_selectedMode == 2) ...[
                       const SizedBox(height: 6),
@@ -376,32 +414,54 @@ class _GamePageState extends State<GamePage> {
               ),
             ),
           // "Start Game" waiting screen
-          if (_waitingToStart)
-            Center(
-              child: GestureDetector(
-                onTap: _startGame,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border.all(
-                      color: CupertinoColors.white,
-                      width: 1.5,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Start Game',
-                    style: TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
-                    ),
+          if (_waitingToStart && _isGameOver)
+            Positioned(
+              top: MediaQuery.of(context).size.height / 4,
+              left: 0,
+              right: 0,
+              child: const Center(
+                child: Text(
+                  'Game Over !',
+                  style: TextStyle(
+                    color: CupertinoColors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.none,
                   ),
                 ),
+              ),
+            ),
+          if (_waitingToStart)
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: _startGame,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: CupertinoColors.white,
+                          width: 1.5,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Text(
+                        'Start Game',
+                        style: TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],

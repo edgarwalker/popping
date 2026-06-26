@@ -12,6 +12,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   final Random _random = Random();
 
   double _spawnTimer = 0.0;
+  double elapsedTime = 0.0; // total game time in seconds
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
@@ -31,6 +32,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   /// Callback to notify Flutter UI of game over (level mode).
   void Function()? onGameOver;
+
+  /// Callback to notify Flutter UI of time updates (adventure mode).
+  void Function(double elapsed)? onTimeUpdate;
 
   void setMode(int mode) {
     _mode = mode;
@@ -135,6 +139,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     }
 
     if (_adventureComplete) return;
+
+    // Track elapsed time for adventure mode
+    if (_mode == 2) {
+      final prevSecond = elapsedTime.toInt();
+      elapsedTime += dt;
+      if (elapsedTime.toInt() != prevSecond) {
+        onTimeUpdate?.call(elapsedTime);
+      }
+    }
 
     _spawnTimer += dt;
     if (_spawnTimer >= currentLevelConfig.spawnInterval) {
@@ -296,6 +309,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _paused = false;
     _pauseTimer = 0.0;
     _spawnTimer = 0.0;
+    elapsedTime = 0.0;
     _adventureComplete = false;
     _gameOverTriggered = false;
     _score = 0;
@@ -318,6 +332,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _paused = true;
     _pauseTimer = 0.0;
     _spawnTimer = 0.0;
+    elapsedTime = 0.0;
     _adventureComplete = false;
     _gameOverTriggered = false;
     _score = 0;
