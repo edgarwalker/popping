@@ -145,6 +145,15 @@ class Bubble extends CircleComponent
   /// Public method to pop this bubble (used by swipe detection).
   void pop() => _pop();
 
+  /// Pop without adding score (used for game-over animation).
+  void popSilent() {
+    if (_popping) return;
+    _popping = true;
+    _popElapsed = 0.0;
+    _popRadius = radius;
+    _generateParticles();
+  }
+
   void _popByCollision() {
     if (_popping) return;
     _popping = true;

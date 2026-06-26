@@ -175,7 +175,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         // Pop all remaining active bubbles so user sees the animation
         for (final bubble in children.whereType<Bubble>().toList()) {
           if (!bubble.isPopping) {
-            bubble.pop();
+            bubble.popSilent();
           }
         }
       }
