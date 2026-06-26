@@ -17,6 +17,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
   int adventureTarget = 1000; // target score for adventure mode
   bool _adventureComplete = false;
+  bool _gameOverTriggered = false;
 
   bool _paused = false;
   double _pauseTimer = 0.0;
@@ -27,6 +28,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   /// Callback to notify Flutter UI of level changes (adventure mode).
   void Function(int level)? onLevelUpdate;
+
+  /// Callback to notify Flutter UI of game over (level mode).
+  void Function()? onGameOver;
 
   void setMode(int mode) {
     _mode = mode;
@@ -106,9 +110,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> onLoad() async {
     // Add screen boundary so bubbles can collide with edges
     add(ScreenHitbox());
-
-    // Spawn first bubble
-    _spawnBubble();
   }
 
   @override
@@ -126,7 +127,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       if (_pauseTimer >= _pauseDuration) {
         _paused = false;
         _pauseTimer = 0.0;
-        if (!_adventureComplete) {
+        if (!_adventureComplete && !_gameOverTriggered) {
           _restartGame();
         }
       }
@@ -266,6 +267,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       if (!_paused) {
         _paused = true;
         _pauseTimer = 0.0;
+        _gameOverTriggered = true;
         _score = 0;
         onScoreUpdate?.call(_score);
 
@@ -275,6 +277,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
             bubble.popSilent();
           }
         }
+
+        // Notify UI to show Start Game screen after animation
+        Future.delayed(const Duration(milliseconds: 600), () {
+          onGameOver?.call();
+        });
       }
     }
   }
@@ -282,6 +289,46 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void _restartGame() {
     _spawnTimer = 0.0;
     _spawnBubble();
+  }
+
+  /// Start a fresh game immediately (no pause delay).
+  void startImmediately() {
+    _paused = false;
+    _pauseTimer = 0.0;
+    _spawnTimer = 0.0;
+    _adventureComplete = false;
+    _gameOverTriggered = false;
+    _score = 0;
+    onScoreUpdate?.call(_score);
+    // Clear swipe state
+    _lastDragPoint = null;
+    _trailPoints.clear();
+    // Remove all existing bubbles and text
+    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+    children.whereType<TextComponent>().toList().forEach(
+      (t) => t.removeFromParent(),
+    );
+    // Resume Flame engine
+    paused = false;
+    _spawnBubble();
+  }
+
+  /// Clear all game state without starting (for waiting screen).
+  void clearState() {
+    _paused = true;
+    _pauseTimer = 0.0;
+    _spawnTimer = 0.0;
+    _adventureComplete = false;
+    _gameOverTriggered = false;
+    _score = 0;
+    onScoreUpdate?.call(_score);
+    _lastDragPoint = null;
+    _trailPoints.clear();
+    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+    children.whereType<TextComponent>().toList().forEach(
+      (t) => t.removeFromParent(),
+    );
+    paused = true;
   }
 
   // --- Swipe detection ---

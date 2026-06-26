@@ -35,16 +35,17 @@ class _GamePageState extends State<GamePage> {
   int _selectedMode = 0; // 0: Level, 1: Score, 2: Adventure
   int _score = 0;
   bool _settingsOpen = false;
+  bool _waitingToStart = true;
   int _adventureTarget = 1000;
   Timer? _holdTimer;
 
   void _setAdventureTarget(int value) {
     _adventureTarget = value.clamp(50, 10000000000);
     _game.adventureTarget = _adventureTarget;
-    // Reset score if adventure mode
     if (_selectedMode == 2) {
       _score = 0;
-      _game.resetAdventure();
+      _waitingToStart = true;
+      _game.clearState();
     }
   }
 
@@ -64,7 +65,15 @@ class _GamePageState extends State<GamePage> {
         _selectedLevel = level;
       });
     };
+    _game.onGameOver = () {
+      setState(() {
+        _waitingToStart = true;
+        _score = 0;
+      });
+      _game.clearState();
+    };
     _game.adventureTarget = _adventureTarget;
+    _game.paused = true; // Start paused, waiting for "Start Game"
   }
 
   void _showSettingsPanel() {
@@ -73,9 +82,21 @@ class _GamePageState extends State<GamePage> {
       if (_settingsOpen) {
         _game.paused = true;
       } else {
-        _game.paused = false;
+        if (_waitingToStart) {
+          _game.paused = true;
+        } else {
+          _game.paused = false;
+        }
       }
     });
+  }
+
+  void _startGame() {
+    setState(() {
+      _waitingToStart = false;
+      _settingsOpen = false;
+    });
+    _game.startImmediately();
   }
 
   @override
@@ -83,7 +104,10 @@ class _GamePageState extends State<GamePage> {
     return CupertinoPageScaffold(
       child: Stack(
         children: [
-          GameWidget(game: _game),
+          IgnorePointer(
+            ignoring: _waitingToStart,
+            child: GameWidget(game: _game),
+          ),
           // Top row: score left, gear right
           SafeArea(
             child: Padding(
@@ -159,14 +183,15 @@ class _GamePageState extends State<GamePage> {
                         setState(() {
                           _selectedMode = value.round();
                           if (_selectedMode == 1 || _selectedMode == 2) {
-                            // Score/Adventure mode: reset level slider to 0, use level 7 config
                             _selectedLevel = 0;
                             _game.setLevel(6);
                           } else {
-                            // Restore level from slider
                             _game.setLevel(_selectedLevel);
                           }
                           _game.setMode(_selectedMode);
+                          _waitingToStart = true;
+                          _score = 0;
+                          _game.clearState();
                         });
                       },
                     ),
@@ -200,8 +225,11 @@ class _GamePageState extends State<GamePage> {
                                   if (newLevel != _selectedLevel) {
                                     setState(() {
                                       _selectedLevel = newLevel;
+                                      _waitingToStart = true;
+                                      _score = 0;
                                     });
                                     _game.setLevel(newLevel);
+                                    _game.clearState();
                                   }
                                 },
                       ),
@@ -308,7 +336,71 @@ class _GamePageState extends State<GamePage> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 16),
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _waitingToStart = true;
+                            _score = 0;
+                          });
+                          _game.clearState();
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: CupertinoColors.white.withValues(
+                                alpha: 0.6,
+                              ),
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text(
+                            'Reset Game',
+                            style: TextStyle(
+                              color: CupertinoColors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
+                ),
+              ),
+            ),
+          // "Start Game" waiting screen
+          if (_waitingToStart)
+            Center(
+              child: GestureDetector(
+                onTap: _startGame,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: CupertinoColors.white,
+                      width: 1.5,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Start Game',
+                    style: TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
                 ),
               ),
             ),
