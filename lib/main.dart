@@ -1,7 +1,6 @@
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 
-import 'level_config.dart';
 import 'popping_game.dart';
 
 void main() {
@@ -30,78 +29,27 @@ class GamePage extends StatefulWidget {
 
 class _GamePageState extends State<GamePage> {
   final PoppingGame _game = PoppingGame();
-  int _selectedLevel = 0; // default level 1 (index 0)
+  int _selectedLevel = 0;
+  int _selectedMode = 0; // 0: Level, 1: Score, 2: Adventure
+  int _score = 0;
+  bool _settingsOpen = false;
 
-  void _showLevelPicker() {
-    showCupertinoDialog<int>(
-      context: context,
-      barrierDismissible: true,
-      builder: (BuildContext context) {
-        return Stack(
-          children: [
-            Positioned(
-              top: 80,
-              right: 20,
-              child: Container(
-                width: 160,
-                decoration: BoxDecoration(
-                  color: const Color(0xF0222222),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: List.generate(levels.length, (index) {
-                    final isSelected = index == _selectedLevel;
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedLevel = index;
-                        });
-                        _game.setLevel(index);
-                        Navigator.of(context).pop(index);
-                      },
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          border:
-                              index < levels.length - 1
-                                  ? const Border(
-                                    bottom: BorderSide(
-                                      color: Color(0xFF444444),
-                                      width: 0.5,
-                                    ),
-                                  )
-                                  : null,
-                        ),
-                        child: Text(
-                          levels[index].name,
-                          style: TextStyle(
-                            color:
-                                isSelected
-                                    ? CupertinoColors.activeBlue
-                                    : CupertinoColors.white,
-                            fontSize: 16,
-                            fontWeight:
-                                isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+  static const List<String> _modes = ['Level', 'Score', 'Adventure'];
+
+  @override
+  void initState() {
+    super.initState();
+    _game.onScoreUpdate = (score) {
+      setState(() {
+        _score = score;
+      });
+    };
+  }
+
+  void _showSettingsPanel() {
+    setState(() {
+      _settingsOpen = !_settingsOpen;
+    });
   }
 
   @override
@@ -110,36 +58,111 @@ class _GamePageState extends State<GamePage> {
       child: Stack(
         children: [
           GameWidget(game: _game),
-          // Level picker button positioned at top-right
-          Positioned(
-            top: 40,
-            right: 20,
-            child: CupertinoButton(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              color: CupertinoColors.black.withValues(alpha: 0.54),
-              borderRadius: BorderRadius.circular(8),
-              onPressed: _showLevelPicker,
+          // Top row: score left, gear right
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    levels[_selectedLevel].name,
+                    'Score: $_score',
                     style: const TextStyle(
                       color: CupertinoColors.white,
-                      fontSize: 16,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
                     ),
                   ),
-                  const SizedBox(width: 4),
-                  const Icon(
-                    CupertinoIcons.chevron_down,
-                    color: CupertinoColors.white,
-                    size: 16,
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: _showSettingsPanel,
+                    child: const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Icon(
+                        CupertinoIcons.gear,
+                        color: CupertinoColors.white,
+                        size: 22,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
+          // Settings panel with Mode and Level sliders
+          if (_settingsOpen)
+            Positioned(
+              top: 75,
+              right: 16,
+              child: Container(
+                width: 240,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0x00000000),
+                  border: Border.all(
+                    color: CupertinoColors.white.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Mode slider
+                    Text(
+                      'Mode: ${_modes[_selectedMode]}',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    CupertinoSlider(
+                      min: 0,
+                      max: 2,
+                      divisions: 2,
+                      value: _selectedMode.toDouble(),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedMode = value.round();
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Level slider
+                    Text(
+                      'Level: ${_selectedLevel + 1}',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    CupertinoSlider(
+                      min: 0,
+                      max: 6,
+                      divisions: 6,
+                      value: _selectedLevel.toDouble(),
+                      onChanged: (value) {
+                        final newLevel = value.round();
+                        if (newLevel != _selectedLevel) {
+                          setState(() {
+                            _selectedLevel = newLevel;
+                          });
+                          _game.setLevel(newLevel);
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

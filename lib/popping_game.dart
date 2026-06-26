@@ -19,7 +19,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   double _pauseTimer = 0.0;
   static const double _pauseDuration = 2.0;
 
-  late TextComponent _scoreText;
+  /// Callback to notify Flutter UI of score changes.
+  void Function(int score)? onScoreUpdate;
 
   LevelConfig get currentLevelConfig => levels[_currentLevel];
 
@@ -28,7 +29,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
     // Clear bubbles and pause 1 second before starting the new level
     _score = 0;
-    _scoreText.text = 'Score: 0';
+    onScoreUpdate?.call(_score);
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
     _paused = true;
     _pauseTimer = 0.0;
@@ -66,19 +67,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> onLoad() async {
     // Add screen boundary so bubbles can collide with edges
     add(ScreenHitbox());
-
-    _scoreText = TextComponent(
-      text: 'Score: 0',
-      position: Vector2(20, 40),
-      textRenderer: TextPaint(
-        style: const TextStyle(
-          color: Color(0xB3FFFFFF),
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-    add(_scoreText);
 
     // Spawn first bubble
     _spawnBubble();
@@ -161,7 +149,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   void onBubblePopped() {
     _score++;
-    _scoreText.text = 'Score: $_score';
+    onScoreUpdate?.call(_score);
   }
 
   void onBubbleCollision() {
@@ -170,7 +158,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _paused = true;
     _pauseTimer = 0.0;
     _score = 0;
-    _scoreText.text = 'Score: 0';
+    onScoreUpdate?.call(_score);
 
     // Pop all remaining active bubbles so user sees the animation
     for (final bubble in children.whereType<Bubble>().toList()) {
