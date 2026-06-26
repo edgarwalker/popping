@@ -147,6 +147,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       if (elapsedTime.toInt() != prevSecond) {
         onTimeUpdate?.call(elapsedTime);
       }
+      // Time limit: 24 hours (86400 seconds)
+      if (elapsedTime >= 86400 && _score < adventureTarget) {
+        _adventureComplete = true;
+        onGameOver?.call();
+        return;
+      }
     }
 
     _spawnTimer += dt;
