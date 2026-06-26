@@ -89,23 +89,62 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void render(Canvas canvas) {
     super.render(canvas);
 
-    // Draw swipe trail
+    // Draw swipe trail as lightning bolt
     if (_trailPoints.length >= 2) {
+      // Outer glow pass
       for (int i = 1; i < _trailPoints.length; i++) {
         final prev = _trailPoints[i - 1];
         final curr = _trailPoints[i];
         final opacity = (1.0 - curr.age / _trailFadeDuration).clamp(0.0, 1.0);
-        final paint =
+
+        // Calculate perpendicular jag offset for lightning effect
+        final dx = curr.position.x - prev.position.x;
+        final dy = curr.position.y - prev.position.y;
+        final len = sqrt(dx * dx + dy * dy);
+        if (len < 1) continue;
+
+        // Normalized perpendicular
+        final nx = -dy / len;
+        final ny = dx / len;
+
+        // Jagged midpoint offset
+        final jagAmount =
+            (i % 2 == 0 ? 1 : -1) * (3.0 + (i * 7 % 5).toDouble());
+        final midX = (prev.position.x + curr.position.x) / 2 + nx * jagAmount;
+        final midY = (prev.position.y + curr.position.y) / 2 + ny * jagAmount;
+
+        // Outer glow (blue-white)
+        final glowPaint =
             Paint()
-              ..color = const Color(0xFFFFFFFF).withValues(alpha: opacity * 0.8)
-              ..strokeWidth = 3.0
+              ..color = const Color(0xFF4488FF).withValues(alpha: opacity * 0.4)
+              ..strokeWidth = 8.0
               ..strokeCap = StrokeCap.round
               ..style = PaintingStyle.stroke;
-        canvas.drawLine(
-          Offset(prev.position.x, prev.position.y),
-          Offset(curr.position.x, curr.position.y),
-          paint,
-        );
+
+        final path =
+            Path()
+              ..moveTo(prev.position.x, prev.position.y)
+              ..lineTo(midX, midY)
+              ..lineTo(curr.position.x, curr.position.y);
+        canvas.drawPath(path, glowPaint);
+
+        // Core lightning (bright white)
+        final corePaint =
+            Paint()
+              ..color = const Color(0xFFFFFFFF).withValues(alpha: opacity * 0.9)
+              ..strokeWidth = 2.5
+              ..strokeCap = StrokeCap.round
+              ..style = PaintingStyle.stroke;
+        canvas.drawPath(path, corePaint);
+
+        // Inner bright core
+        final innerPaint =
+            Paint()
+              ..color = const Color(0xFFCCEEFF).withValues(alpha: opacity * 0.7)
+              ..strokeWidth = 1.0
+              ..strokeCap = StrokeCap.round
+              ..style = PaintingStyle.stroke;
+        canvas.drawPath(path, innerPaint);
       }
     }
   }
