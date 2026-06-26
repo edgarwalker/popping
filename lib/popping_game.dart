@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'bubble.dart';
 import 'level_config.dart';
@@ -11,9 +11,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   final Random _random = Random();
 
   double _spawnTimer = 0.0;
-  final double _spawnInterval = 1.5; // seconds between spawns
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
+
+  bool _paused = false;
+  double _pauseTimer = 0.0;
+  static const double _pauseDuration = 1.0;
 
   late TextComponent _scoreText;
 
@@ -21,22 +24,13 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
 
   void setLevel(int levelIndex) {
     _currentLevel = levelIndex.clamp(0, levels.length - 1);
-    _resetGame();
-  }
 
-  void _resetGame() {
-    // Reset score
+    // Clear bubbles and pause 1 second before starting the new level
     _score = 0;
     _scoreText.text = 'Score: 0';
-
-    // Remove all existing bubbles
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
-
-    // Reset spawn timer and spawn fresh bubbles
-    _spawnTimer = 0.0;
-    for (int i = 0; i < currentLevelConfig.maxBubbles; i++) {
-      _spawnBubble();
-    }
+    _paused = true;
+    _pauseTimer = 0.0;
   }
 
   @override
@@ -52,7 +46,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
       position: Vector2(20, 40),
       textRenderer: TextPaint(
         style: const TextStyle(
-          color: Colors.white70,
+          color: Color(0xB3FFFFFF),
           fontSize: 20,
           fontWeight: FontWeight.bold,
         ),
@@ -60,35 +54,42 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
     );
     add(_scoreText);
 
-    // Spawn initial bubbles based on level
-    for (int i = 0; i < currentLevelConfig.maxBubbles; i++) {
-      _spawnBubble();
-    }
+    // Spawn first bubble
+    _spawnBubble();
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
+    if (_paused) {
+      _pauseTimer += dt;
+      if (_pauseTimer >= _pauseDuration) {
+        _paused = false;
+        _pauseTimer = 0.0;
+        _restartGame();
+      }
+      return;
+    }
+
     _spawnTimer += dt;
-    if (_spawnTimer >= _spawnInterval) {
+    if (_spawnTimer >= currentLevelConfig.spawnInterval) {
       _spawnTimer = 0.0;
-      // Spawn multiple bubbles per tick based on level
+      // Spawn one bubble per tick
       final activeBubbles =
           children.whereType<Bubble>().where((b) => !b.isPopping).length;
-      final canSpawn = currentLevelConfig.maxBubbles - activeBubbles;
-      final toSpawn = currentLevelConfig.spawnCount.clamp(0, canSpawn);
-      for (int i = 0; i < toSpawn; i++) {
+      if (activeBubbles < currentLevelConfig.maxBubbles) {
         _spawnBubble();
       }
     }
   }
 
   void _spawnBubble() {
-    final margin = 100.0;
+    // Small margin so bubble center stays on screen
+    final margin = Bubble.initialRadius + 5.0;
     // Minimum distance between new bubble center and existing bubble edges
     const spawnRadius = Bubble.initialRadius;
-    const minGap = 20.0; // extra spacing between bubbles
+    final minGap = currentLevelConfig.minSpacing;
 
     // Get all active (non-popping) bubbles
     final existingBubbles =
@@ -96,13 +97,14 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
 
     // Try to find a valid position (max attempts to avoid infinite loop)
     Vector2? spawnPos;
-    for (int attempt = 0; attempt < 20; attempt++) {
+    for (int attempt = 0; attempt < 50; attempt++) {
       final x = margin + _random.nextDouble() * (size.x - margin * 2);
       final y = margin + _random.nextDouble() * (size.y - margin * 2);
       final candidate = Vector2(x, y);
 
       bool tooClose = false;
       for (final bubble in existingBubbles) {
+        // Edge-to-edge distance must be at least minGap
         final minDistance = bubble.radius + spawnRadius + minGap;
         if (candidate.distanceTo(bubble.position) < minDistance) {
           tooClose = true;
@@ -116,7 +118,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
       }
     }
 
-    // Only spawn if we found a valid position with enough space
+    // Only spawn if minimum distance is satisfied
     if (spawnPos != null) {
       final baseSpeed = currentLevelConfig.growthSpeed;
       // Add slight randomness (±15%) around the level's growth speed
@@ -131,8 +133,19 @@ class PoppingGame extends FlameGame with HasCollisionDetection {
   }
 
   void onBubbleCollision() {
-    // Collision — reset score
+    if (_paused) return;
+    // Collision — pause for 2 seconds, then restart
+    _paused = true;
+    _pauseTimer = 0.0;
     _score = 0;
     _scoreText.text = 'Score: 0';
+
+    // Remove all remaining bubbles
+    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+  }
+
+  void _restartGame() {
+    _spawnTimer = 0.0;
+    _spawnBubble();
   }
 }

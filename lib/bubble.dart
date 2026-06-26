@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 import 'popping_game.dart';
 
@@ -39,8 +39,8 @@ class Bubble extends CircleComponent
         HSLColor.fromAHSL(
           1.0,
           random.nextDouble() * 360,
-          0.7 + random.nextDouble() * 0.3,
-          0.5 + random.nextDouble() * 0.2,
+          0.4 + random.nextDouble() * 0.6,
+          0.3 + random.nextDouble() * 0.6,
         ).toColor();
 
     paint =
@@ -129,10 +129,8 @@ class Bubble extends CircleComponent
       // Two bubble borders collide — both pop, reset score
       _popByCollision();
       other._popByCollision();
-    } else if (other is ScreenHitbox) {
-      // Bubble border touches screen edge — pop, reset score
-      _popByCollision();
     }
+    // Screen edge collisions are ignored — bubbles can touch edges freely
   }
 
   void _pop() {
