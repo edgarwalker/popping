@@ -15,6 +15,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
+  int adventureTarget = 1000; // target score for adventure mode
+  bool _adventureComplete = false;
 
   bool _paused = false;
   double _pauseTimer = 0.0;
@@ -23,10 +25,40 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   /// Callback to notify Flutter UI of score changes.
   void Function(int score)? onScoreUpdate;
 
+  /// Callback to notify Flutter UI of level changes (adventure mode).
+  void Function(int level)? onLevelUpdate;
+
   void setMode(int mode) {
     _mode = mode;
     _score = 0;
+    _adventureComplete = false;
     onScoreUpdate?.call(_score);
+    // Remove "Well Done !" text if present
+    children.whereType<TextComponent>().toList().forEach(
+      (t) => t.removeFromParent(),
+    );
+    if (_mode == 2) {
+      // Adventure starts at level 1
+      _currentLevel = 0;
+      onLevelUpdate?.call(_currentLevel);
+    }
+  }
+
+  void resetAdventure() {
+    _score = 0;
+    _adventureComplete = false;
+    _paused = false;
+    _pauseTimer = 0.0;
+    _spawnTimer = 0.0;
+    _currentLevel = 0;
+    onScoreUpdate?.call(_score);
+    onLevelUpdate?.call(_currentLevel);
+    // Remove all bubbles and "Well Done !" text
+    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+    children.whereType<TextComponent>().toList().forEach(
+      (t) => t.removeFromParent(),
+    );
+    _spawnBubble();
   }
 
   LevelConfig get currentLevelConfig => levels[_currentLevel];
@@ -94,10 +126,14 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       if (_pauseTimer >= _pauseDuration) {
         _paused = false;
         _pauseTimer = 0.0;
-        _restartGame();
+        if (!_adventureComplete) {
+          _restartGame();
+        }
       }
       return;
     }
+
+    if (_adventureComplete) return;
 
     _spawnTimer += dt;
     if (_spawnTimer >= currentLevelConfig.spawnInterval) {
@@ -155,17 +191,78 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void onBubblePopped() {
-    _score++;
-    onScoreUpdate?.call(_score);
+    if (_mode == 2) {
+      // Adventure mode: +1, check if target reached
+      _score++;
+      if (_score >= adventureTarget) {
+        _score = adventureTarget;
+        onScoreUpdate?.call(_score);
+        _onAdventureComplete();
+        return;
+      }
+      onScoreUpdate?.call(_score);
+      _updateAdventureLevel();
+    } else {
+      _score++;
+      onScoreUpdate?.call(_score);
+    }
+  }
+
+  void _onAdventureComplete() {
+    // Game done — stop spawning, pop all bubbles silently
+    _adventureComplete = true;
+    _paused = true;
+    _pauseTimer = 0.0;
+    for (final bubble in children.whereType<Bubble>().toList()) {
+      if (!bubble.isPopping) {
+        bubble.popSilent();
+      }
+    }
+
+    // Show "Well Done !" at center
+    add(
+      TextComponent(
+        text: 'Well Done !',
+        position: Vector2(size.x / 2, size.y / 2),
+        anchor: Anchor.center,
+        priority: 100,
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            color: Color(0xFFFFFFFF),
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// In adventure mode, divide target into 7 parts.
+  /// Score 0..part1 uses level 1 config, part1..part2 uses level 2, etc.
+  void _updateAdventureLevel() {
+    final partSize = adventureTarget ~/ 7;
+    int newLevel;
+    if (partSize <= 0) {
+      newLevel = 6; // fallback to max level
+    } else {
+      newLevel = (_score ~/ partSize).clamp(0, 6);
+    }
+    if (newLevel != _currentLevel) {
+      _currentLevel = newLevel;
+      onLevelUpdate?.call(_currentLevel);
+    }
   }
 
   void onBubblePoppedByCollision() {
-    if (_mode == 1) {
-      // Score mode: -1 per bubble popped by collision, no game reset
+    if (_mode == 1 || _mode == 2) {
+      // Score/Adventure mode: -1 per bubble popped by collision, no game reset
       _score -= 1;
       onScoreUpdate?.call(_score);
+      if (_mode == 2) {
+        _updateAdventureLevel();
+      }
     } else {
-      // Level/Adventure mode: game over on first collision call
+      // Level mode: game over on first collision call
       if (!_paused) {
         _paused = true;
         _pauseTimer = 0.0;

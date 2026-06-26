@@ -38,8 +38,19 @@ class _GamePageState extends State<GamePage> {
   int _adventureTarget = 1000;
   Timer? _holdTimer;
 
+  void _setAdventureTarget(int value) {
+    _adventureTarget = value.clamp(50, 10000000000);
+    _game.adventureTarget = _adventureTarget;
+    // Reset score if adventure mode
+    if (_selectedMode == 2) {
+      _score = 0;
+      _game.resetAdventure();
+    }
+  }
+
   static const List<String> _modes = ['Level', 'Score', 'Adventure'];
 
+  @override
   @override
   void initState() {
     super.initState();
@@ -48,11 +59,22 @@ class _GamePageState extends State<GamePage> {
         _score = score;
       });
     };
+    _game.onLevelUpdate = (level) {
+      setState(() {
+        _selectedLevel = level;
+      });
+    };
+    _game.adventureTarget = _adventureTarget;
   }
 
   void _showSettingsPanel() {
     setState(() {
       _settingsOpen = !_settingsOpen;
+      if (_settingsOpen) {
+        _game.paused = true;
+      } else {
+        _game.paused = false;
+      }
     });
   }
 
@@ -71,7 +93,7 @@ class _GamePageState extends State<GamePage> {
                   if (_selectedMode != 0)
                     Text(
                       _selectedMode == 2
-                          ? '$_score / $_adventureTarget'
+                          ? 'Score: $_score / $_adventureTarget'
                           : 'Score: $_score',
                       style: const TextStyle(
                         color: CupertinoColors.white,
@@ -203,8 +225,7 @@ class _GamePageState extends State<GamePage> {
                           GestureDetector(
                             onTap: () {
                               setState(() {
-                                _adventureTarget = (_adventureTarget - 10)
-                                    .clamp(100, 10000000000);
+                                _setAdventureTarget(_adventureTarget - 10);
                               });
                             },
                             onLongPressStart: (_) {
@@ -212,8 +233,7 @@ class _GamePageState extends State<GamePage> {
                                 const Duration(milliseconds: 100),
                                 (_) {
                                   setState(() {
-                                    _adventureTarget = (_adventureTarget - 10)
-                                        .clamp(100, 10000000000);
+                                    _setAdventureTarget(_adventureTarget - 10);
                                   });
                                 },
                               );
@@ -251,10 +271,9 @@ class _GamePageState extends State<GamePage> {
                               onChanged: (value) {
                                 final parsed = int.tryParse(value);
                                 if (parsed != null) {
-                                  _adventureTarget = parsed.clamp(
-                                    100,
-                                    10000000000,
-                                  );
+                                  setState(() {
+                                    _setAdventureTarget(parsed);
+                                  });
                                 }
                               },
                             ),
@@ -263,8 +282,7 @@ class _GamePageState extends State<GamePage> {
                           GestureDetector(
                             onTap: () {
                               setState(() {
-                                _adventureTarget = (_adventureTarget + 10)
-                                    .clamp(100, 10000000000);
+                                _setAdventureTarget(_adventureTarget + 10);
                               });
                             },
                             onLongPressStart: (_) {
@@ -272,8 +290,7 @@ class _GamePageState extends State<GamePage> {
                                 const Duration(milliseconds: 100),
                                 (_) {
                                   setState(() {
-                                    _adventureTarget = (_adventureTarget + 10)
-                                        .clamp(100, 10000000000);
+                                    _setAdventureTarget(_adventureTarget + 10);
                                   });
                                 },
                               );
