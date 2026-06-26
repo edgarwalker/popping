@@ -129,6 +129,12 @@ class _GamePageState extends State<GamePage> {
                       onChanged: (value) {
                         setState(() {
                           _selectedMode = value.round();
+                          // If Score mode, reset level slider to 0 but use level 7 config
+                          if (_selectedMode == 1) {
+                            _selectedLevel = 0;
+                            _game.setLevel(6); // level 7 config (index 6)
+                          }
+                          _game.setMode(_selectedMode);
                         });
                       },
                     ),
@@ -136,28 +142,37 @@ class _GamePageState extends State<GamePage> {
                     // Level slider
                     Text(
                       'Level: ${_selectedLevel + 1}',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
+                      style: TextStyle(
+                        color:
+                            _selectedMode == 1
+                                ? CupertinoColors.systemGrey
+                                : CupertinoColors.white,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
                         decoration: TextDecoration.none,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    CupertinoSlider(
-                      min: 0,
-                      max: 6,
-                      divisions: 6,
-                      value: _selectedLevel.toDouble(),
-                      onChanged: (value) {
-                        final newLevel = value.round();
-                        if (newLevel != _selectedLevel) {
-                          setState(() {
-                            _selectedLevel = newLevel;
-                          });
-                          _game.setLevel(newLevel);
-                        }
-                      },
+                    Opacity(
+                      opacity: _selectedMode == 1 ? 0.4 : 1.0,
+                      child: CupertinoSlider(
+                        min: 0,
+                        max: 6,
+                        divisions: 6,
+                        value: _selectedLevel.toDouble(),
+                        onChanged:
+                            _selectedMode == 1
+                                ? null
+                                : (value) {
+                                  final newLevel = value.round();
+                                  if (newLevel != _selectedLevel) {
+                                    setState(() {
+                                      _selectedLevel = newLevel;
+                                    });
+                                    _game.setLevel(newLevel);
+                                  }
+                                },
+                      ),
                     ),
                   ],
                 ),

@@ -14,6 +14,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   double _spawnTimer = 0.0;
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
+  int _mode = 0; // 0: Level, 1: Score, 2: Adventure
 
   bool _paused = false;
   double _pauseTimer = 0.0;
@@ -21,6 +22,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   /// Callback to notify Flutter UI of score changes.
   void Function(int score)? onScoreUpdate;
+
+  void setMode(int mode) {
+    _mode = mode;
+    _score = 0;
+    onScoreUpdate?.call(_score);
+  }
 
   LevelConfig get currentLevelConfig => levels[_currentLevel];
 
@@ -152,18 +159,25 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     onScoreUpdate?.call(_score);
   }
 
-  void onBubbleCollision() {
-    if (_paused) return;
-    // Collision — pause for 2 seconds so user can see the pop animation
-    _paused = true;
-    _pauseTimer = 0.0;
-    _score = 0;
-    onScoreUpdate?.call(_score);
+  void onBubblePoppedByCollision() {
+    if (_mode == 1) {
+      // Score mode: -1 per bubble popped by collision, no game reset
+      _score -= 1;
+      onScoreUpdate?.call(_score);
+    } else {
+      // Level/Adventure mode: game over on first collision call
+      if (!_paused) {
+        _paused = true;
+        _pauseTimer = 0.0;
+        _score = 0;
+        onScoreUpdate?.call(_score);
 
-    // Pop all remaining active bubbles so user sees the animation
-    for (final bubble in children.whereType<Bubble>().toList()) {
-      if (!bubble.isPopping) {
-        bubble.pop();
+        // Pop all remaining active bubbles so user sees the animation
+        for (final bubble in children.whereType<Bubble>().toList()) {
+          if (!bubble.isPopping) {
+            bubble.pop();
+          }
+        }
       }
     }
   }

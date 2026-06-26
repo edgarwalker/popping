@@ -151,7 +151,7 @@ class Bubble extends CircleComponent
     _popElapsed = 0.0;
     _popRadius = radius;
     _generateParticles();
-    game.onBubbleCollision();
+    game.onBubblePoppedByCollision();
   }
 
   void _generateParticles() {
