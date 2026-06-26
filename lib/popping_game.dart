@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'bubble.dart';
@@ -19,6 +20,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int adventureTarget = 1000; // target score for adventure mode
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
+
+  // Audio pools for performance
+  AudioPool? _popPool;
+  AudioPool? _crashPool;
 
   bool _paused = false;
   double _pauseTimer = 0.0;
@@ -153,6 +158,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> onLoad() async {
     // Add screen boundary so bubbles can collide with edges
     add(ScreenHitbox());
+
+    // Preload audio pools
+    try {
+      _popPool = await FlameAudio.createPool('pop.wav', maxPlayers: 4);
+      _crashPool = await FlameAudio.createPool('crash.wav', maxPlayers: 2);
+    } catch (_) {}
   }
 
   @override
@@ -250,6 +261,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void onBubblePopped() {
+    try {
+      _popPool?.start(volume: 0.5);
+    } catch (_) {}
     if (_mode == 2) {
       // Adventure mode: +1, check if target reached
       _score++;
@@ -313,6 +327,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void onBubblePoppedByCollision() {
+    try {
+      _crashPool?.start(volume: 0.7);
+    } catch (_) {}
     if (_mode == 1 || _mode == 2) {
       // Score/Adventure mode: -1 per bubble popped by collision, no game reset
       _score -= 1;

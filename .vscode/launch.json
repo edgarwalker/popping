@@ -5,18 +5,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "popping (debug mode)",
+            "name": "debug",
             "request": "launch",
             "type": "dart"
         },
         {
-            "name": "popping (profile mode)",
+            "name": "profile",
             "request": "launch",
             "type": "dart",
             "flutterMode": "profile"
         },
         {
-            "name": "popping (release mode)",
+            "name": "release",
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
