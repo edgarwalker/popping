@@ -142,6 +142,9 @@ class Bubble extends CircleComponent
     game.onBubblePopped();
   }
 
+  /// Public method to pop this bubble (used by swipe detection).
+  void pop() => _pop();
+
   void _popByCollision() {
     if (_popping) return;
     _popping = true;
