@@ -198,8 +198,7 @@ class _GamePageState extends State<GamePage> {
                       },
                     ),
                   if (_selectedMode == 2) const Spacer(),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
+                  BounceButton(
                     onTap: _showSettingsPanel,
                     child: const Padding(
                       padding: EdgeInsets.all(8),
@@ -237,7 +236,7 @@ class _GamePageState extends State<GamePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  GestureDetector(
+                  BounceButton(
                     onTap: _startGame,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -377,13 +376,13 @@ class _GamePageState extends State<GamePage> {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          GestureDetector(
+                          BounceButton(
                             onTap: () {
                               setState(() {
                                 _setAdventureTarget(_adventureTarget - 10);
                               });
                             },
-                            onLongPressStart: (_) {
+                            onLongPressStart: () {
                               _holdTimer = Timer.periodic(
                                 const Duration(milliseconds: 100),
                                 (_) {
@@ -393,7 +392,7 @@ class _GamePageState extends State<GamePage> {
                                 },
                               );
                             },
-                            onLongPressEnd: (_) {
+                            onLongPressEnd: () {
                               _holdTimer?.cancel();
                               _holdTimer = null;
                             },
@@ -445,13 +444,13 @@ class _GamePageState extends State<GamePage> {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          GestureDetector(
+                          BounceButton(
                             onTap: () {
                               setState(() {
                                 _setAdventureTarget(_adventureTarget + 10);
                               });
                             },
-                            onLongPressStart: (_) {
+                            onLongPressStart: () {
                               _holdTimer = Timer.periodic(
                                 const Duration(milliseconds: 100),
                                 (_) {
@@ -461,7 +460,7 @@ class _GamePageState extends State<GamePage> {
                                 },
                               );
                             },
-                            onLongPressEnd: (_) {
+                            onLongPressEnd: () {
                               _holdTimer?.cancel();
                               _holdTimer = null;
                             },
@@ -476,7 +475,7 @@ class _GamePageState extends State<GamePage> {
                     ],
                     const SizedBox(height: 16),
                     Center(
-                      child: GestureDetector(
+                      child: BounceButton(
                         onTap: () {
                           _game.clearState();
                           // Unpause briefly to render cleared state
@@ -521,6 +520,79 @@ class _GamePageState extends State<GamePage> {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// iOS-style bounce button with water drop scale animation.
+class BounceButton extends StatefulWidget {
+  final Widget child;
+  final VoidCallback? onTap;
+  final VoidCallback? onLongPressStart;
+  final VoidCallback? onLongPressEnd;
+
+  const BounceButton({
+    super.key,
+    required this.child,
+    this.onTap,
+    this.onLongPressStart,
+    this.onLongPressEnd,
+  });
+
+  @override
+  State<BounceButton> createState() => _BounceButtonState();
+}
+
+class _BounceButtonState extends State<BounceButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 120),
+      reverseDuration: const Duration(milliseconds: 200),
+    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.85,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap?.call();
+      },
+      onTapCancel: () => _controller.reverse(),
+      onLongPressStart: (_) {
+        _controller.forward();
+        widget.onLongPressStart?.call();
+      },
+      onLongPressEnd: (_) {
+        _controller.reverse();
+        widget.onLongPressEnd?.call();
+      },
+      child: AnimatedBuilder(
+        animation: _scale,
+        builder: (context, child) {
+          return Transform.scale(scale: _scale.value, child: child);
+        },
+        child: widget.child,
       ),
     );
   }
