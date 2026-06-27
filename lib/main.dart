@@ -201,11 +201,11 @@ class _GamePageState extends State<GamePage> {
                   BounceButton(
                     onTap: _showSettingsPanel,
                     child: const Padding(
-                      padding: EdgeInsets.all(8),
+                      padding: EdgeInsets.all(12),
                       child: Icon(
                         CupertinoIcons.gear,
                         color: CupertinoColors.white,
-                        size: 22,
+                        size: 26,
                       ),
                     ),
                   ),
@@ -240,21 +240,21 @@ class _GamePageState extends State<GamePage> {
                     onTap: _startGame,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 16,
+                        horizontal: 40,
+                        vertical: 20,
                       ),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: CupertinoColors.white,
                           width: 1.5,
                         ),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Text(
                         'Start Game',
                         style: TextStyle(
                           color: CupertinoColors.white,
-                          fontSize: 22,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.none,
                         ),
@@ -396,10 +396,13 @@ class _GamePageState extends State<GamePage> {
                               _holdTimer?.cancel();
                               _holdTimer = null;
                             },
-                            child: const Icon(
-                              CupertinoIcons.minus_circle,
-                              color: CupertinoColors.white,
-                              size: 22,
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                CupertinoIcons.minus_circle,
+                                color: CupertinoColors.white,
+                                size: 28,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 10),
@@ -464,10 +467,13 @@ class _GamePageState extends State<GamePage> {
                               _holdTimer?.cancel();
                               _holdTimer = null;
                             },
-                            child: const Icon(
-                              CupertinoIcons.plus_circle,
-                              color: CupertinoColors.white,
-                              size: 22,
+                            child: const Padding(
+                              padding: EdgeInsets.all(8),
+                              child: Icon(
+                                CupertinoIcons.plus_circle,
+                                color: CupertinoColors.white,
+                                size: 28,
+                              ),
                             ),
                           ),
                         ],
@@ -491,8 +497,8 @@ class _GamePageState extends State<GamePage> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 8,
+                            horizontal: 24,
+                            vertical: 12,
                           ),
                           decoration: BoxDecoration(
                             border: Border.all(
@@ -500,13 +506,13 @@ class _GamePageState extends State<GamePage> {
                                 alpha: 0.6,
                               ),
                             ),
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(10),
                           ),
                           child: const Text(
                             'Reset Game',
                             style: TextStyle(
                               color: CupertinoColors.white,
-                              fontSize: 14,
+                              fontSize: 16,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.none,
                             ),
