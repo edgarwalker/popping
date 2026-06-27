@@ -88,6 +88,10 @@ class _GamePageState extends State<GamePage> {
         _score = 0;
       });
       _game.clearState();
+      _game.paused = false;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _game.paused = true;
+      });
     };
     _game.adventureTarget = _adventureTarget;
     _game.paused = true; // Start paused, waiting for "Start Game"
@@ -583,7 +587,8 @@ class _GamePageState extends State<GamePage> {
                           ),
                         ],
                         const SizedBox(height: 20),
-                        Center(
+                        Align(
+                          alignment: Alignment.centerLeft,
                           child: BounceButton(
                             onTap: () {
                               _game.clearState();
@@ -600,8 +605,8 @@ class _GamePageState extends State<GamePage> {
                             },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
+                                horizontal: 14,
+                                vertical: 6,
                               ),
                               decoration: BoxDecoration(
                                 border: Border.all(
