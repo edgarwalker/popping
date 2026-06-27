@@ -19,6 +19,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int _currentLevel = 0; // index into levels list (0–6)
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
   int adventureTarget = 1000; // target score for adventure mode
+  double volume = 4.0 / 7.0; // 0.0 to 1.0
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
 
@@ -379,14 +380,16 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void _playPop() {
+    if (volume <= 0) return;
     try {
-      _popPool?.start(volume: 0.4);
+      _popPool?.start(volume: volume * 0.5);
     } catch (_) {}
   }
 
   void _playCrash() {
+    if (volume <= 0) return;
     try {
-      _crashPool?.start(volume: 0.6);
+      _crashPool?.start(volume: volume * 0.7);
     } catch (_) {}
   }
 

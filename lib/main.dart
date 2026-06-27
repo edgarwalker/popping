@@ -39,6 +39,10 @@ class _GamePageState extends State<GamePage> {
   bool _waitingToStart = true;
   bool _isGameOver = false;
   int _adventureTarget = 1000;
+  int _volume = 4; // 0-7, app volume level
+  int _volumeBeforeMute = 4; // remember volume before mute
+  final GlobalKey _volumeKey = GlobalKey();
+  final GlobalKey _volumeBarsKey = GlobalKey();
   Timer? _holdTimer;
   Timer? _timeDisplayTimer;
   late TextEditingController _targetController;
@@ -276,252 +280,488 @@ class _GamePageState extends State<GamePage> {
               ),
             ),
             Center(
-              child: Container(
-                width: 240,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xF0101020),
-                  border: Border.all(
-                    color: CupertinoColors.white.withValues(alpha: 0.4),
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mode: ${_modes[_selectedMode]}',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 280,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xF0101020),
+                      border: Border.all(
+                        color: CupertinoColors.white.withValues(alpha: 0.4),
+                        width: 1,
                       ),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(height: 4),
-                    CupertinoSlider(
-                      min: 0,
-                      max: 2,
-                      divisions: 2,
-                      value: _selectedMode.toDouble(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedMode = value.round();
-                          if (_selectedMode == 1 || _selectedMode == 2) {
-                            _selectedLevel = 0;
-                            _game.setLevel(6);
-                          } else {
-                            _game.setLevel(_selectedLevel);
-                          }
-                          _game.setMode(_selectedMode);
-                          _waitingToStart = true;
-                          _score = 0;
-                          _game.clearState();
-                          _game.paused = false;
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            _game.paused = true;
-                          });
-                        });
-                      },
-                    ),
-                    if (_selectedMode == 0) ...[
-                      const SizedBox(height: 6),
-                      Text(
-                        'Level: ${_selectedLevel + 1}',
-                        style: const TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      CupertinoSlider(
-                        min: 0,
-                        max: 6,
-                        divisions: 6,
-                        value: _selectedLevel.toDouble(),
-                        onChanged: (value) {
-                          final newLevel = value.round();
-                          if (newLevel != _selectedLevel) {
-                            setState(() {
-                              _selectedLevel = newLevel;
-                              _waitingToStart = true;
-                              _score = 0;
-                            });
-                            _game.setLevel(newLevel);
-                            _game.clearState();
-                            _game.paused = false;
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              _game.paused = true;
-                            });
-                          }
-                        },
-                      ),
-                    ],
-                    if (_selectedMode == 2) ...[
-                      const SizedBox(height: 6),
-                      const Text(
-                        'Target',
-                        style: TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          BounceButton(
-                            onTap: () {
-                              setState(() {
-                                _setAdventureTarget(_adventureTarget - 10);
-                              });
-                            },
-                            onLongPressStart: () {
-                              _holdTimer = Timer.periodic(
-                                const Duration(milliseconds: 100),
-                                (_) {
-                                  setState(() {
-                                    _setAdventureTarget(_adventureTarget - 10);
-                                  });
-                                },
-                              );
-                            },
-                            onLongPressEnd: () {
-                              _holdTimer?.cancel();
-                              _holdTimer = null;
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(
-                                CupertinoIcons.minus_circle,
-                                color: CupertinoColors.white,
-                                size: 28,
-                              ),
-                            ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Mode: ${_modes[_selectedMode]}',
+                          style: const TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
                           ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: CupertinoTextField(
-                              controller: _targetController,
-                              keyboardType: TextInputType.number,
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                color: CupertinoColors.white,
-                                fontSize: 14,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: CupertinoColors.white.withValues(
-                                    alpha: 0.4,
+                        ),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: List.generate(_modes.length, (index) {
+                            final isSelected = index == _selectedMode;
+                            return BounceButton(
+                              onTap: () {
+                                setState(() {
+                                  _selectedMode = index;
+                                  if (_selectedMode == 1 ||
+                                      _selectedMode == 2) {
+                                    _selectedLevel = 0;
+                                    _game.setLevel(6);
+                                  } else {
+                                    _game.setLevel(_selectedLevel);
+                                  }
+                                  _game.setMode(_selectedMode);
+                                  _waitingToStart = true;
+                                  _score = 0;
+                                  _game.clearState();
+                                  _game.paused = false;
+                                  WidgetsBinding.instance.addPostFrameCallback((
+                                    _,
+                                  ) {
+                                    _game.paused = true;
+                                  });
+                                });
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color:
+                                      isSelected
+                                          ? CupertinoColors.activeBlue
+                                          : const Color(0x00000000),
+                                  border: Border.all(
+                                    color:
+                                        isSelected
+                                            ? CupertinoColors.activeBlue
+                                            : CupertinoColors.white.withValues(
+                                              alpha: 0.6,
+                                            ),
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  _modes[index],
+                                  style: TextStyle(
+                                    color:
+                                        isSelected
+                                            ? CupertinoColors.white
+                                            : CupertinoColors.white.withValues(
+                                              alpha: 0.7,
+                                            ),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.none,
                                   ),
                                 ),
-                                borderRadius: BorderRadius.circular(6),
                               ),
-                              onChanged: (value) {
-                                final parsed = int.tryParse(value);
-                                if (parsed != null) {
-                                  if (parsed < 50) {
-                                    _adventureTarget = 50;
-                                    _targetController.text = '50';
-                                    _targetController
-                                        .selection = TextSelection.fromPosition(
-                                      TextPosition(
-                                        offset: _targetController.text.length,
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 6),
+                        Opacity(
+                          opacity: _selectedMode == 0 ? 1.0 : 0.4,
+                          child: IgnorePointer(
+                            ignoring: _selectedMode != 0,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Level: ${_selectedLevel + 1}',
+                                  style: TextStyle(
+                                    color:
+                                        _selectedMode == 0
+                                            ? CupertinoColors.white
+                                            : CupertinoColors.systemGrey,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: List.generate(7, (index) {
+                                    final isSelected = index == _selectedLevel;
+                                    return BounceButton(
+                                      onTap: () {
+                                        if (index != _selectedLevel) {
+                                          setState(() {
+                                            _selectedLevel = index;
+                                            _waitingToStart = true;
+                                            _score = 0;
+                                          });
+                                          _game.setLevel(index);
+                                          _game.clearState();
+                                          _game.paused = false;
+                                          WidgetsBinding.instance
+                                              .addPostFrameCallback((_) {
+                                                _game.paused = true;
+                                              });
+                                        }
+                                      },
+                                      child: Container(
+                                        width: 28,
+                                        height: 28,
+                                        alignment: Alignment.center,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              isSelected
+                                                  ? CupertinoColors.activeBlue
+                                                  : const Color(0x00000000),
+                                          border: Border.all(
+                                            color:
+                                                isSelected
+                                                    ? CupertinoColors.activeBlue
+                                                    : CupertinoColors.white
+                                                        .withValues(alpha: 0.6),
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '${index + 1}',
+                                          style: TextStyle(
+                                            color:
+                                                isSelected
+                                                    ? CupertinoColors.white
+                                                    : CupertinoColors.white
+                                                        .withValues(alpha: 0.7),
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.bold,
+                                            decoration: TextDecoration.none,
+                                          ),
+                                        ),
                                       ),
                                     );
-                                  } else {
-                                    _adventureTarget = parsed.clamp(
-                                      50,
-                                      10000000000,
-                                    );
-                                  }
-                                  _game.adventureTarget = _adventureTarget;
-                                }
-                              },
+                                  }),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 10),
-                          BounceButton(
-                            onTap: () {
-                              setState(() {
-                                _setAdventureTarget(_adventureTarget + 10);
-                              });
-                            },
-                            onLongPressStart: () {
-                              _holdTimer = Timer.periodic(
-                                const Duration(milliseconds: 100),
-                                (_) {
-                                  setState(() {
-                                    _setAdventureTarget(_adventureTarget + 10);
-                                  });
-                                },
-                              );
-                            },
-                            onLongPressEnd: () {
-                              _holdTimer?.cancel();
-                              _holdTimer = null;
-                            },
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(
-                                CupertinoIcons.plus_circle,
-                                color: CupertinoColors.white,
-                                size: 28,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    const SizedBox(height: 16),
-                    Center(
-                      child: BounceButton(
-                        onTap: () {
-                          _game.clearState();
-                          // Unpause briefly to render cleared state
-                          _game.paused = false;
-                          WidgetsBinding.instance.addPostFrameCallback((_) {
-                            _game.paused = true;
-                          });
-                          setState(() {
-                            _waitingToStart = true;
-                            _isGameOver = false;
-                            _score = 0;
-                          });
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                          decoration: BoxDecoration(
-                            border: Border.all(
-                              color: CupertinoColors.white.withValues(
-                                alpha: 0.6,
-                              ),
-                            ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text(
-                            'Reset Game',
+                        ),
+                        if (_selectedMode == 2) ...[
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Target',
                             style: TextStyle(
                               color: CupertinoColors.white,
-                              fontSize: 16,
+                              fontSize: 14,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.none,
                             ),
                           ),
+                          const SizedBox(height: 10),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              BounceButton(
+                                onTap: () {
+                                  setState(() {
+                                    _setAdventureTarget(_adventureTarget - 10);
+                                  });
+                                },
+                                onLongPressStart: () {
+                                  _holdTimer = Timer.periodic(
+                                    const Duration(milliseconds: 100),
+                                    (_) {
+                                      setState(() {
+                                        _setAdventureTarget(
+                                          _adventureTarget - 10,
+                                        );
+                                      });
+                                    },
+                                  );
+                                },
+                                onLongPressEnd: () {
+                                  _holdTimer?.cancel();
+                                  _holdTimer = null;
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(
+                                    CupertinoIcons.minus_circle,
+                                    color: CupertinoColors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: CupertinoTextField(
+                                  controller: _targetController,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    color: CupertinoColors.white,
+                                    fontSize: 14,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    border: Border.all(
+                                      color: CupertinoColors.white.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                    ),
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  onChanged: (value) {
+                                    final parsed = int.tryParse(value);
+                                    if (parsed != null) {
+                                      if (parsed < 50) {
+                                        _adventureTarget = 50;
+                                        _targetController.text = '50';
+                                        _targetController.selection =
+                                            TextSelection.fromPosition(
+                                              TextPosition(
+                                                offset:
+                                                    _targetController
+                                                        .text
+                                                        .length,
+                                              ),
+                                            );
+                                      } else {
+                                        _adventureTarget = parsed.clamp(
+                                          50,
+                                          10000000000,
+                                        );
+                                      }
+                                      _game.adventureTarget = _adventureTarget;
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              BounceButton(
+                                onTap: () {
+                                  setState(() {
+                                    _setAdventureTarget(_adventureTarget + 10);
+                                  });
+                                },
+                                onLongPressStart: () {
+                                  _holdTimer = Timer.periodic(
+                                    const Duration(milliseconds: 100),
+                                    (_) {
+                                      setState(() {
+                                        _setAdventureTarget(
+                                          _adventureTarget + 10,
+                                        );
+                                      });
+                                    },
+                                  );
+                                },
+                                onLongPressEnd: () {
+                                  _holdTimer?.cancel();
+                                  _holdTimer = null;
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(8),
+                                  child: Icon(
+                                    CupertinoIcons.plus_circle,
+                                    color: CupertinoColors.white,
+                                    size: 28,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                        const SizedBox(height: 16),
+                        Center(
+                          child: BounceButton(
+                            onTap: () {
+                              _game.clearState();
+                              // Unpause briefly to render cleared state
+                              _game.paused = false;
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                _game.paused = true;
+                              });
+                              setState(() {
+                                _waitingToStart = true;
+                                _isGameOver = false;
+                                _score = 0;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: CupertinoColors.white.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Text(
+                                'Reset Game',
+                                style: TextStyle(
+                                  color: CupertinoColors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.none,
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Volume control
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 12,
+                      horizontal: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xF0101020),
+                      border: Border.all(
+                        color: CupertinoColors.white.withValues(alpha: 0.4),
+                        width: 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapUp: (details) {
+                        final RenderBox? box =
+                            _volumeBarsKey.currentContext?.findRenderObject()
+                                as RenderBox?;
+                        if (box == null) return;
+                        final localPos = box.globalToLocal(
+                          details.globalPosition,
+                        );
+                        final fraction =
+                            1.0 -
+                            (localPos.dy / box.size.height).clamp(0.0, 1.0);
+                        final tappedLevel = (fraction * 7).ceil().clamp(1, 7);
+                        setState(() {
+                          if (tappedLevel == 1 && _volume == 1) {
+                            _volume = 0;
+                          } else {
+                            _volume = tappedLevel;
+                          }
+                          _game.volume = _volume / 7.0;
+                        });
+                      },
+                      onVerticalDragStart: (details) {
+                        final RenderBox? box =
+                            _volumeBarsKey.currentContext?.findRenderObject()
+                                as RenderBox?;
+                        if (box == null) return;
+                        final localPos = box.globalToLocal(
+                          details.globalPosition,
+                        );
+                        final fraction =
+                            1.0 -
+                            (localPos.dy / box.size.height).clamp(0.0, 1.0);
+                        final newVolume = (fraction * 7).ceil().clamp(0, 7);
+                        setState(() {
+                          _volume = newVolume;
+                          _game.volume = _volume / 7.0;
+                        });
+                      },
+                      onVerticalDragUpdate: (details) {
+                        final RenderBox? box =
+                            _volumeBarsKey.currentContext?.findRenderObject()
+                                as RenderBox?;
+                        if (box == null) return;
+                        final localPos = box.globalToLocal(
+                          details.globalPosition,
+                        );
+                        final fraction =
+                            1.0 -
+                            (localPos.dy / box.size.height).clamp(0.0, 1.0);
+                        final newVolume = (fraction * 7).ceil().clamp(0, 7);
+                        if (newVolume != _volume) {
+                          setState(() {
+                            _volume = newVolume;
+                            _game.volume = _volume / 7.0;
+                          });
+                        }
+                      },
+                      child: Column(
+                        key: _volumeKey,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (_volume == 0) {
+                                  _volume = _volumeBeforeMute;
+                                } else {
+                                  _volumeBeforeMute = _volume;
+                                  _volume = 0;
+                                }
+                                _game.volume = _volume / 7.0;
+                              });
+                            },
+                            child: Icon(
+                              _volume == 0
+                                  ? CupertinoIcons.speaker_slash_fill
+                                  : CupertinoIcons.speaker_2_fill,
+                              color: CupertinoColors.white,
+                              size: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Column(
+                            key: _volumeBarsKey,
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(7, (i) {
+                              final level = 7 - i;
+                              final isActive = level <= _volume;
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 4,
+                                  horizontal: 6,
+                                ),
+                                child: Container(
+                                  width: 30,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color:
+                                        isActive
+                                            ? CupertinoColors.activeBlue
+                                            : const Color(0x00000000),
+                                    border: Border.all(
+                                      color:
+                                          isActive
+                                              ? CupertinoColors.activeBlue
+                                              : CupertinoColors.white
+                                                  .withValues(alpha: 0.4),
+                                    ),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
