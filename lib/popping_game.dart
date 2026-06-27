@@ -5,6 +5,7 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
 
 import 'bubble.dart';
 import 'level_config.dart';
@@ -21,7 +22,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
 
-  // Audio pools for performance
+  // Audio - lazy loaded
+  bool _audioReady = false;
   AudioPool? _popPool;
   AudioPool? _crashPool;
 
@@ -96,60 +98,45 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
     // Draw swipe trail as lightning bolt
     if (_trailPoints.length >= 2) {
-      // Outer glow pass
+      final glowPaint =
+          Paint()
+            ..strokeWidth = 6.0
+            ..strokeCap = StrokeCap.round
+            ..style = PaintingStyle.stroke;
+      final corePaint =
+          Paint()
+            ..strokeWidth = 2.0
+            ..strokeCap = StrokeCap.round
+            ..style = PaintingStyle.stroke;
+
       for (int i = 1; i < _trailPoints.length; i++) {
         final prev = _trailPoints[i - 1];
         final curr = _trailPoints[i];
         final opacity = (1.0 - curr.age / _trailFadeDuration).clamp(0.0, 1.0);
 
-        // Calculate perpendicular jag offset for lightning effect
         final dx = curr.position.x - prev.position.x;
         final dy = curr.position.y - prev.position.y;
         final len = sqrt(dx * dx + dy * dy);
         if (len < 1) continue;
 
-        // Normalized perpendicular
         final nx = -dy / len;
         final ny = dx / len;
-
-        // Jagged midpoint offset
         final jagAmount =
             (i % 2 == 0 ? 1 : -1) * (3.0 + (i * 7 % 5).toDouble());
         final midX = (prev.position.x + curr.position.x) / 2 + nx * jagAmount;
         final midY = (prev.position.y + curr.position.y) / 2 + ny * jagAmount;
-
-        // Outer glow (blue-white)
-        final glowPaint =
-            Paint()
-              ..color = const Color(0xFF4488FF).withValues(alpha: opacity * 0.4)
-              ..strokeWidth = 8.0
-              ..strokeCap = StrokeCap.round
-              ..style = PaintingStyle.stroke;
 
         final path =
             Path()
               ..moveTo(prev.position.x, prev.position.y)
               ..lineTo(midX, midY)
               ..lineTo(curr.position.x, curr.position.y);
+
+        glowPaint.color = Color.fromRGBO(68, 136, 255, opacity * 0.4);
         canvas.drawPath(path, glowPaint);
 
-        // Core lightning (bright white)
-        final corePaint =
-            Paint()
-              ..color = const Color(0xFFFFFFFF).withValues(alpha: opacity * 0.9)
-              ..strokeWidth = 2.5
-              ..strokeCap = StrokeCap.round
-              ..style = PaintingStyle.stroke;
+        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.9);
         canvas.drawPath(path, corePaint);
-
-        // Inner bright core
-        final innerPaint =
-            Paint()
-              ..color = const Color(0xFFCCEEFF).withValues(alpha: opacity * 0.7)
-              ..strokeWidth = 1.0
-              ..strokeCap = StrokeCap.round
-              ..style = PaintingStyle.stroke;
-        canvas.drawPath(path, innerPaint);
       }
     }
   }
@@ -158,12 +145,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> onLoad() async {
     // Add screen boundary so bubbles can collide with edges
     add(ScreenHitbox());
-
-    // Preload audio pools
-    try {
-      _popPool = await FlameAudio.createPool('pop.wav', maxPlayers: 4);
-      _crashPool = await FlameAudio.createPool('crash.wav', maxPlayers: 2);
-    } catch (_) {}
   }
 
   @override
@@ -261,9 +242,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void onBubblePopped() {
-    try {
-      _popPool?.start(volume: 0.5);
-    } catch (_) {}
+    HapticFeedback.lightImpact();
+    _playPop();
     if (_mode == 2) {
       // Adventure mode: +1, check if target reached
       _score++;
@@ -327,9 +307,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void onBubblePoppedByCollision() {
-    try {
-      _crashPool?.start(volume: 0.7);
-    } catch (_) {}
+    HapticFeedback.heavyImpact();
+    _playCrash();
     if (_mode == 1 || _mode == 2) {
       // Score/Adventure mode: -1 per bubble popped by collision, no game reset
       _score -= 1;
@@ -386,7 +365,29 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     );
     // Resume Flame engine
     paused = false;
+    // Lazy init audio on first start
+    if (!_audioReady) _initAudio();
     _spawnBubble();
+  }
+
+  Future<void> _initAudio() async {
+    _audioReady = true;
+    try {
+      _popPool = await FlameAudio.createPool('pop.wav', maxPlayers: 3);
+      _crashPool = await FlameAudio.createPool('crash.wav', maxPlayers: 2);
+    } catch (_) {}
+  }
+
+  void _playPop() {
+    try {
+      _popPool?.start(volume: 0.4);
+    } catch (_) {}
+  }
+
+  void _playCrash() {
+    try {
+      _crashPool?.start(volume: 0.6);
+    } catch (_) {}
   }
 
   /// Clear all game state without starting (for waiting screen).

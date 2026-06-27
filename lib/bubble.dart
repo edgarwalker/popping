@@ -32,6 +32,8 @@ class Bubble extends CircleComponent
   static const double _popDuration = 0.5;
 
   late Color _color;
+  late Color _colorInner;
+  late Color _colorOuter;
 
   @override
   Future<void> onLoad() async {
@@ -45,13 +47,13 @@ class Bubble extends CircleComponent
           0.3 + random.nextDouble() * 0.6,
         ).toColor();
 
+    _colorInner = _color.withValues(alpha: 0.9);
+    _colorOuter = _color.withValues(alpha: 0.3);
+
     paint =
         Paint()
           ..shader = RadialGradient(
-            colors: [
-              _color.withValues(alpha: 0.9),
-              _color.withValues(alpha: 0.3),
-            ],
+            colors: [_colorInner, _colorOuter],
           ).createShader(
             Rect.fromCircle(center: Offset.zero, radius: _initialRadius),
           );
@@ -73,14 +75,19 @@ class Bubble extends CircleComponent
 
     // Grow the bubble continuously from center
     _elapsed += dt;
-    radius =
+    final newRadius =
         _initialRadius +
         (_elapsed / _growthDuration) * (_maxRadius - _initialRadius);
 
-    // Update shader for new size
-    paint.shader = RadialGradient(
-      colors: [_color.withValues(alpha: 0.9), _color.withValues(alpha: 0.3)],
-    ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
+    // Only update shader when radius changes noticeably (every ~2px)
+    if ((newRadius - radius).abs() > 2.0) {
+      radius = newRadius;
+      paint.shader = RadialGradient(
+        colors: [_colorInner, _colorOuter],
+      ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
+    } else {
+      radius = newRadius;
+    }
   }
 
   @override
@@ -96,32 +103,34 @@ class Bubble extends CircleComponent
     final duration = _crashedByCollision ? _popDuration * 0.7 : _popDuration;
     final progress = (_popElapsed / duration).clamp(0.0, 1.0);
     final opacity = 1.0 - progress;
+    final speed = _crashedByCollision ? 1.5 : 1.0;
+    final progressSpeed = progress * speed;
 
     final centerX = _popRadius;
     final centerY = _popRadius;
 
+    final particlePaint = Paint();
+
     for (final particle in _particles) {
-      final speed = _crashedByCollision ? 1.5 : 1.0;
       final dx =
-          centerX + cos(particle.angle) * particle.distance * progress * speed;
+          centerX + particle.cosAngle * particle.distance * progressSpeed;
       final dy =
-          centerY + sin(particle.angle) * particle.distance * progress * speed;
+          centerY + particle.sinAngle * particle.distance * progressSpeed;
       final particleSize = particle.size * (1.0 - progress * 0.5);
 
-      final paint = Paint()..color = particle.color.withValues(alpha: opacity);
+      particlePaint.color = particle.color.withValues(alpha: opacity);
 
       if (_crashedByCollision) {
-        // Draw sharp squares for crash
         canvas.drawRect(
           Rect.fromCenter(
             center: Offset(dx, dy),
             width: particleSize,
             height: particleSize,
           ),
-          paint,
+          particlePaint,
         );
       } else {
-        canvas.drawCircle(Offset(dx, dy), particleSize, paint);
+        canvas.drawCircle(Offset(dx, dy), particleSize, particlePaint);
       }
     }
   }
@@ -200,14 +209,13 @@ class Bubble extends CircleComponent
 
   void _generateCrashParticles() {
     final random = Random();
-    // Many small sharp fragments — explosive burst
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 25; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
           angle: angle,
-          distance: _popRadius * 0.5 + random.nextDouble() * 100.0,
-          size: 1.0 + random.nextDouble() * 3.5,
+          distance: _popRadius * 0.5 + random.nextDouble() * 80.0,
+          size: 1.5 + random.nextDouble() * 3.0,
           color:
               Color.lerp(
                 _color,
@@ -217,14 +225,13 @@ class Bubble extends CircleComponent
         ),
       );
     }
-    // Add a few bigger orange/yellow spark pieces
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 5; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
           angle: angle,
-          distance: _popRadius + random.nextDouble() * 50.0,
-          size: 4.0 + random.nextDouble() * 4.0,
+          distance: _popRadius + random.nextDouble() * 40.0,
+          size: 4.0 + random.nextDouble() * 3.0,
           color:
               Color.lerp(
                 const Color(0xFFFF8800),
@@ -238,15 +245,17 @@ class Bubble extends CircleComponent
 }
 
 class _PopParticle {
-  final double angle;
+  final double cosAngle;
+  final double sinAngle;
   final double distance;
   final double size;
   final Color color;
 
   _PopParticle({
-    required this.angle,
+    required double angle,
     required this.distance,
     required this.size,
     required this.color,
-  });
+  }) : cosAngle = cos(angle),
+       sinAngle = sin(angle);
 }
