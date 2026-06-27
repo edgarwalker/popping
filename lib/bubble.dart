@@ -194,13 +194,13 @@ class Bubble extends CircleComponent
 
   void _generateParticles() {
     final random = Random();
-    for (int i = 0; i < 10; i++) {
-      final angle = (i / 10) * 2 * pi;
+    for (int i = 0; i < 24; i++) {
+      final angle = (i / 24) * 2 * pi + random.nextDouble() * 0.2;
       _particles.add(
         _PopParticle(
           angle: angle,
-          distance: _popRadius + random.nextDouble() * 40.0,
-          size: 4.0 + random.nextDouble() * 6.0,
+          distance: _popRadius + random.nextDouble() * 60.0,
+          size: 5.0 + random.nextDouble() * 8.0,
           color: _color,
         ),
       );
@@ -209,13 +209,14 @@ class Bubble extends CircleComponent
 
   void _generateCrashParticles() {
     final random = Random();
-    for (int i = 0; i < 25; i++) {
+    // Main red fragments — more and bigger
+    for (int i = 0; i < 70; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
           angle: angle,
-          distance: _popRadius * 0.5 + random.nextDouble() * 80.0,
-          size: 1.5 + random.nextDouble() * 3.0,
+          distance: _popRadius * 0.5 + random.nextDouble() * 130.0,
+          size: 6.0 + random.nextDouble() * 12.0,
           color:
               Color.lerp(
                 _color,
@@ -225,13 +226,14 @@ class Bubble extends CircleComponent
         ),
       );
     }
-    for (int i = 0; i < 5; i++) {
+    // Orange/yellow sparks — more and bigger
+    for (int i = 0; i < 25; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
           angle: angle,
-          distance: _popRadius + random.nextDouble() * 40.0,
-          size: 4.0 + random.nextDouble() * 3.0,
+          distance: _popRadius + random.nextDouble() * 90.0,
+          size: 8.0 + random.nextDouble() * 10.0,
           color:
               Color.lerp(
                 const Color(0xFFFF8800),
