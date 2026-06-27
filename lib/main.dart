@@ -375,7 +375,7 @@ class _GamePageState extends State<GamePage> {
                             );
                           }),
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 14),
                         Opacity(
                           opacity: _selectedMode == 0 ? 1.0 : 0.4,
                           child: IgnorePointer(
@@ -458,7 +458,7 @@ class _GamePageState extends State<GamePage> {
                           ),
                         ),
                         if (_selectedMode == 2) ...[
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 14),
                           const Text(
                             'Target',
                             style: TextStyle(
@@ -582,7 +582,7 @@ class _GamePageState extends State<GamePage> {
                             ],
                           ),
                         ],
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 20),
                         Center(
                           child: BounceButton(
                             onTap: () {

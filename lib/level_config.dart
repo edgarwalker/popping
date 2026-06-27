@@ -74,8 +74,8 @@ const List<LevelConfig> levels = [
   LevelConfig(
     level: 5,
     name: 'Level 5',
-    growthSpeed: 3.0,
-    maxBubbles: 15,
+    growthSpeed: 2.6,
+    maxBubbles: 16,
     spawnCount: 1,
     spawnInterval: 1.0,
     minSpacing: 60.0,
@@ -83,8 +83,8 @@ const List<LevelConfig> levels = [
   LevelConfig(
     level: 6,
     name: 'Level 6',
-    growthSpeed: 2.0,
-    maxBubbles: 18,
+    growthSpeed: 1.6,
+    maxBubbles: 19,
     spawnCount: 1,
     spawnInterval: 0.5,
     minSpacing: 60.0,
@@ -92,8 +92,8 @@ const List<LevelConfig> levels = [
   LevelConfig(
     level: 7,
     name: 'Level 7',
-    growthSpeed: 1.0,
-    maxBubbles: 22,
+    growthSpeed: 0.6,
+    maxBubbles: 23,
     spawnCount: 1,
     spawnInterval: 0.3,
     minSpacing: 60.0,
