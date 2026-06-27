@@ -35,6 +35,9 @@ class Bubble extends CircleComponent
   late Color _colorInner;
   late Color _colorOuter;
 
+  // Reusable paint for particle rendering — avoids allocation per frame
+  final Paint _particlePaint = Paint();
+
   @override
   Future<void> onLoad() async {
     await super.onLoad();
@@ -64,6 +67,9 @@ class Bubble extends CircleComponent
   @override
   void update(double dt) {
     super.update(dt);
+
+    // Stop all activity if game is over
+    if (game.isGameOver) return;
 
     if (_popping) {
       _popElapsed += dt;
@@ -105,32 +111,55 @@ class Bubble extends CircleComponent
     final opacity = 1.0 - progress;
     final speed = _crashedByCollision ? 1.5 : 1.0;
     final progressSpeed = progress * speed;
+    final sizeScale = 1.0 - progress * 0.5;
 
     final centerX = _popRadius;
     final centerY = _popRadius;
 
-    final particlePaint = Paint();
+    final paint = _particlePaint;
 
-    for (final particle in _particles) {
-      final dx =
-          centerX + particle.cosAngle * particle.distance * progressSpeed;
-      final dy =
-          centerY + particle.sinAngle * particle.distance * progressSpeed;
-      final particleSize = particle.size * (1.0 - progress * 0.5);
+    if (_crashedByCollision) {
+      for (int i = 0; i < _particles.length; i++) {
+        final particle = _particles[i];
+        final dx =
+            centerX + particle.cosAngle * particle.distance * progressSpeed;
+        final dy =
+            centerY + particle.sinAngle * particle.distance * progressSpeed;
+        final particleSize = particle.size * sizeScale;
 
-      particlePaint.color = particle.color.withValues(alpha: opacity);
+        paint.color = Color.fromARGB(
+          (particle.alpha * opacity * 255).toInt(),
+          particle.r,
+          particle.g,
+          particle.b,
+        );
 
-      if (_crashedByCollision) {
         canvas.drawRect(
           Rect.fromCenter(
             center: Offset(dx, dy),
             width: particleSize,
             height: particleSize,
           ),
-          particlePaint,
+          paint,
         );
-      } else {
-        canvas.drawCircle(Offset(dx, dy), particleSize, particlePaint);
+      }
+    } else {
+      for (int i = 0; i < _particles.length; i++) {
+        final particle = _particles[i];
+        final dx =
+            centerX + particle.cosAngle * particle.distance * progressSpeed;
+        final dy =
+            centerY + particle.sinAngle * particle.distance * progressSpeed;
+        final particleSize = particle.size * sizeScale;
+
+        paint.color = Color.fromARGB(
+          (particle.alpha * opacity * 255).toInt(),
+          particle.r,
+          particle.g,
+          particle.b,
+        );
+
+        canvas.drawCircle(Offset(dx, dy), particleSize, paint);
       }
     }
   }
@@ -149,6 +178,7 @@ class Bubble extends CircleComponent
   ) {
     super.onCollisionStart(intersectionPoints, other);
     if (_popping) return;
+    if (game.isGameOver) return;
 
     if (other is Bubble && !other._popping) {
       // Crash both bubbles first (set animation), then notify game
@@ -251,13 +281,20 @@ class _PopParticle {
   final double sinAngle;
   final double distance;
   final double size;
-  final Color color;
+  final int r;
+  final int g;
+  final int b;
+  final double alpha;
 
   _PopParticle({
     required double angle,
     required this.distance,
     required this.size,
-    required this.color,
+    required Color color,
   }) : cosAngle = cos(angle),
-       sinAngle = sin(angle);
+       sinAngle = sin(angle),
+       r = (color.r * 255.0).round().clamp(0, 255),
+       g = (color.g * 255.0).round().clamp(0, 255),
+       b = (color.b * 255.0).round().clamp(0, 255),
+       alpha = color.a;
 }

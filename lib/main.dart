@@ -87,8 +87,8 @@ class _GamePageState extends State<GamePage> {
         _isGameOver = true;
         _score = 0;
       });
-      _game.clearState();
-      _game.paused = false;
+      // Don't clear state immediately — let the crash result stay visible
+      // The game is already paused by popping_game.dart
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _game.paused = true;
       });

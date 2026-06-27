@@ -22,6 +22,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   double volume = 4.0 / 7.0; // 0.0 to 1.0
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
+  bool get isGameOver => _gameOverTriggered;
 
   // Audio - lazy loaded
   bool _audioReady = false;
@@ -31,6 +32,36 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   bool _paused = false;
   double _pauseTimer = 0.0;
   static const double _pauseDuration = 2.0;
+
+  // Game-over lightning bolt effect
+  bool _gameOverLightningActive = false;
+  double _gameOverLightningElapsed = 0.0;
+  static const double _gameOverLightningDuration = 2.0; // seconds
+  List<List<Offset>> _gameOverBolts = [];
+
+  // Reusable paint objects for trail rendering
+  final Paint _trailGlowPaint =
+      Paint()
+        ..strokeWidth = 6.0
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+  final Paint _trailCorePaint =
+      Paint()
+        ..strokeWidth = 2.0
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+
+  // Reusable paint objects for game-over lightning
+  final Paint _boltGlowPaint =
+      Paint()
+        ..strokeWidth = 8.0
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
+  final Paint _boltCorePaint =
+      Paint()
+        ..strokeWidth = 3.0
+        ..strokeCap = StrokeCap.round
+        ..style = PaintingStyle.stroke;
 
   /// Callback to notify Flutter UI of score changes.
   void Function(int score)? onScoreUpdate;
@@ -97,18 +128,35 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void render(Canvas canvas) {
     super.render(canvas);
 
+    // Draw game-over lightning bolts
+    if (_gameOverLightningActive && _gameOverBolts.isNotEmpty) {
+      final progress = (_gameOverLightningElapsed / _gameOverLightningDuration)
+          .clamp(0.0, 1.0);
+      final opacity = 1.0 - progress;
+
+      final glowPaint = _boltGlowPaint;
+      final corePaint = _boltCorePaint;
+
+      for (final bolt in _gameOverBolts) {
+        if (bolt.length < 2) continue;
+
+        final path = Path()..moveTo(bolt[0].dx, bolt[0].dy);
+        for (int i = 1; i < bolt.length; i++) {
+          path.lineTo(bolt[i].dx, bolt[i].dy);
+        }
+
+        glowPaint.color = Color.fromRGBO(255, 60, 60, opacity * 0.6);
+        canvas.drawPath(path, glowPaint);
+
+        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.95);
+        canvas.drawPath(path, corePaint);
+      }
+    }
+
     // Draw swipe trail as lightning bolt
     if (_trailPoints.length >= 2) {
-      final glowPaint =
-          Paint()
-            ..strokeWidth = 6.0
-            ..strokeCap = StrokeCap.round
-            ..style = PaintingStyle.stroke;
-      final corePaint =
-          Paint()
-            ..strokeWidth = 2.0
-            ..strokeCap = StrokeCap.round
-            ..style = PaintingStyle.stroke;
+      final glowPaint = _trailGlowPaint;
+      final corePaint = _trailCorePaint;
 
       for (int i = 1; i < _trailPoints.length; i++) {
         final prev = _trailPoints[i - 1];
@@ -120,12 +168,13 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         final len = sqrt(dx * dx + dy * dy);
         if (len < 1) continue;
 
-        final nx = -dy / len;
-        final ny = dx / len;
+        final invLen = 1.0 / len;
+        final nx = -dy * invLen;
+        final ny = dx * invLen;
         final jagAmount =
             (i % 2 == 0 ? 1 : -1) * (3.0 + (i * 7 % 5).toDouble());
-        final midX = (prev.position.x + curr.position.x) / 2 + nx * jagAmount;
-        final midY = (prev.position.y + curr.position.y) / 2 + ny * jagAmount;
+        final midX = (prev.position.x + curr.position.x) * 0.5 + nx * jagAmount;
+        final midY = (prev.position.y + curr.position.y) * 0.5 + ny * jagAmount;
 
         final path =
             Path()
@@ -158,6 +207,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     }
     _trailPoints.removeWhere((p) => p.age >= _trailFadeDuration);
 
+    // Update game-over lightning animation
+    if (_gameOverLightningActive) {
+      _gameOverLightningElapsed += dt;
+      if (_gameOverLightningElapsed >= _gameOverLightningDuration) {
+        _gameOverLightningActive = false;
+        _gameOverBolts = [];
+      }
+    }
+
     if (_paused) {
       _pauseTimer += dt;
       if (_pauseTimer >= _pauseDuration) {
@@ -171,6 +229,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     }
 
     if (_adventureComplete) return;
+    if (_gameOverTriggered) return;
 
     // Track elapsed time for adventure mode
     if (_mode == 2) {
@@ -190,9 +249,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _spawnTimer += dt;
     if (_spawnTimer >= currentLevelConfig.spawnInterval) {
       _spawnTimer = 0.0;
-      // Spawn one bubble per tick
-      final activeBubbles =
-          children.whereType<Bubble>().where((b) => !b.isPopping).length;
+      // Count active bubbles without allocating a list
+      int activeBubbles = 0;
+      for (final child in children) {
+        if (child is Bubble && !child.isPopping) activeBubbles++;
+      }
       if (activeBubbles < currentLevelConfig.maxBubbles) {
         _spawnBubble();
       }
@@ -206,29 +267,30 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     const spawnRadius = Bubble.initialRadius;
     final minGap = currentLevelConfig.minSpacing;
 
-    // Get all active (non-popping) bubbles
-    final existingBubbles =
-        children.whereType<Bubble>().where((b) => !b.isPopping).toList();
-
     // Try to find a valid position (max attempts to avoid infinite loop)
     Vector2? spawnPos;
     for (int attempt = 0; attempt < 50; attempt++) {
       final x = margin + _random.nextDouble() * (size.x - margin * 2);
       final y = margin + _random.nextDouble() * (size.y - margin * 2);
-      final candidate = Vector2(x, y);
+      final candidateX = x;
+      final candidateY = y;
 
       bool tooClose = false;
-      for (final bubble in existingBubbles) {
-        // Edge-to-edge distance must be at least minGap
-        final minDistance = bubble.radius + spawnRadius + minGap;
-        if (candidate.distanceTo(bubble.position) < minDistance) {
-          tooClose = true;
-          break;
+      for (final child in children) {
+        if (child is Bubble && !child.isPopping) {
+          // Edge-to-edge distance must be at least minGap
+          final minDistance = child.radius + spawnRadius + minGap;
+          final dx = candidateX - child.position.x;
+          final dy = candidateY - child.position.y;
+          if (dx * dx + dy * dy < minDistance * minDistance) {
+            tooClose = true;
+            break;
+          }
         }
       }
 
       if (!tooClose) {
-        spawnPos = candidate;
+        spawnPos = Vector2(candidateX, candidateY);
         break;
       }
     }
@@ -326,15 +388,14 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         _score = 0;
         onScoreUpdate?.call(_score);
 
-        // Pop all remaining active bubbles so user sees the animation
-        for (final bubble in children.whereType<Bubble>().toList()) {
-          if (!bubble.isPopping) {
-            bubble.popSilent();
-          }
-        }
+        // Trigger lightning bolt effect from edges to center
+        _startGameOverLightning();
 
-        // Notify UI to show Start Game screen after animation
-        Future.delayed(const Duration(milliseconds: 600), () {
+        // Keep all bubbles frozen in place (don't pop them)
+        // They will be cleared when the player starts a new game
+
+        // Notify UI to show Start Game screen after 2 seconds
+        Future.delayed(const Duration(milliseconds: 2000), () {
           onGameOver?.call();
         });
       }
@@ -354,6 +415,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     elapsedTime = 0.0;
     _adventureComplete = false;
     _gameOverTriggered = false;
+    _gameOverLightningActive = false;
+    _gameOverBolts = [];
     _score = 0;
     onScoreUpdate?.call(_score);
     // Clear swipe state
@@ -393,6 +456,55 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     } catch (_) {}
   }
 
+  /// Generate jagged lightning bolt points from `start` to `end`.
+  List<Offset> _generateBoltPath(Offset start, Offset end, int segments) {
+    final points = <Offset>[start];
+    final random = _random;
+    final dx = end.dx - start.dx;
+    final dy = end.dy - start.dy;
+    final len = sqrt(dx * dx + dy * dy);
+    if (len < 1) return points;
+
+    final invLen = 1.0 / len;
+    // Perpendicular direction
+    final nx = -dy * invLen;
+    final ny = dx * invLen;
+
+    for (int i = 1; i < segments; i++) {
+      final t = i / segments;
+      final baseX = start.dx + dx * t;
+      final baseY = start.dy + dy * t;
+      // Jag perpendicular to the line, scaled by total length
+      final jag = (random.nextDouble() - 0.5) * len * 0.12;
+      points.add(Offset(baseX + nx * jag, baseY + ny * jag));
+    }
+    points.add(end);
+    return points;
+  }
+
+  /// Start the game-over lightning effect.
+  void _startGameOverLightning() {
+    _gameOverLightningActive = true;
+    _gameOverLightningElapsed = 0.0;
+
+    final centerX = size.x / 2;
+    final centerY = size.y / 2;
+    final center = Offset(centerX, centerY);
+
+    // 4 edge midpoints: top, bottom, left, right
+    final edgeMidpoints = [
+      Offset(centerX, 0), // top
+      Offset(centerX, size.y), // bottom
+      Offset(0, centerY), // left
+      Offset(size.x, centerY), // right
+    ];
+
+    _gameOverBolts = [];
+    for (final edgePoint in edgeMidpoints) {
+      _gameOverBolts.add(_generateBoltPath(edgePoint, center, 12));
+    }
+  }
+
   /// Clear all game state without starting (for waiting screen).
   void clearState() {
     _paused = true;
@@ -401,6 +513,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     elapsedTime = 0.0;
     _adventureComplete = false;
     _gameOverTriggered = false;
+    _gameOverLightningActive = false;
+    _gameOverBolts = [];
     _score = 0;
     onScoreUpdate?.call(_score);
     _lastDragPoint = null;
@@ -441,47 +555,48 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void _checkSwipeHit(Vector2 point) {
-    final bubbles =
-        children.whereType<Bubble>().where((b) => !b.isPopping).toList();
-    for (final bubble in bubbles) {
-      if (point.distanceTo(bubble.position) <= bubble.radius) {
-        bubble.pop();
+    for (final child in children) {
+      if (child is Bubble && !child.isPopping) {
+        final dx = point.x - child.position.x;
+        final dy = point.y - child.position.y;
+        final r = child.radius;
+        if (dx * dx + dy * dy <= r * r) {
+          child.pop();
+        }
       }
     }
   }
 
   void _checkSwipeLine(Vector2 from, Vector2 to) {
-    final bubbles =
-        children.whereType<Bubble>().where((b) => !b.isPopping).toList();
-    for (final bubble in bubbles) {
-      if (_lineIntersectsCircle(from, to, bubble.position, bubble.radius)) {
-        bubble.pop();
+    // Pre-compute line segment values once
+    final segDx = to.x - from.x;
+    final segDy = to.y - from.y;
+    final a = segDx * segDx + segDy * segDy;
+    if (a < 0.0001) return; // degenerate segment
+    final invA2 = 1.0 / (2 * a);
+
+    for (final child in children) {
+      if (child is Bubble && !child.isPopping) {
+        // Inline line-circle intersection (avoids Vector2 allocations)
+        final fx = from.x - child.position.x;
+        final fy = from.y - child.position.y;
+        final r = child.radius;
+
+        final b = 2 * (fx * segDx + fy * segDy);
+        final cVal = fx * fx + fy * fy - r * r;
+
+        final discriminant = b * b - 4 * a * cVal;
+        if (discriminant < 0) continue;
+
+        final sqrtDisc = sqrt(discriminant);
+        final t1 = (-b - sqrtDisc) * invA2;
+        final t2 = (-b + sqrtDisc) * invA2;
+
+        if ((t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)) {
+          child.pop();
+        }
       }
     }
-  }
-
-  /// Returns true if line segment (p1→p2) intersects circle at center c with radius r.
-  bool _lineIntersectsCircle(Vector2 p1, Vector2 p2, Vector2 c, double r) {
-    final d = p2 - p1;
-    final f = p1 - c;
-
-    final a = d.dot(d);
-    final b = 2 * f.dot(d);
-    final cVal = f.dot(f) - r * r;
-
-    var discriminant = b * b - 4 * a * cVal;
-    if (discriminant < 0) return false;
-
-    discriminant = sqrt(discriminant);
-
-    final t1 = (-b - discriminant) / (2 * a);
-    final t2 = (-b + discriminant) / (2 * a);
-
-    // Check if either intersection point is within the segment [0, 1]
-    if (t1 >= 0 && t1 <= 1) return true;
-    if (t2 >= 0 && t2 <= 1) return true;
-
-    return false;
   }
 }
 
