@@ -145,83 +145,83 @@ class _GamePageState extends State<GamePage> {
           ),
           // Top row: score left, gear right
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  // Left side content
-                  if (_selectedMode == 0)
-                    Text(
-                      'Level ${_selectedLevel + 1}',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  if (_selectedMode == 1)
-                    Text(
-                      'Score: $_score',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  if (_selectedMode == 2)
-                    Text(
-                      'Score: $_score / $_adventureTarget',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  const Spacer(),
-                  // Center: time for adventure mode
-                  if (_selectedMode == 2)
-                    Builder(
-                      builder: (context) {
-                        final total = _game.elapsedTime.toInt();
-                        final h = total ~/ 3600;
-                        final m = (total % 3600) ~/ 60;
-                        final s = total % 60;
-                        String timeStr;
-                        if (h > 0) {
-                          timeStr = '${h}h ${m}m ${s}s';
-                        } else if (m > 0) {
-                          timeStr = '${m}m ${s}s';
-                        } else {
-                          timeStr = '${s}s';
-                        }
-                        return Text(
-                          'Time: $timeStr',
-                          style: const TextStyle(
-                            color: CupertinoColors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        );
-                      },
-                    ),
-                  if (_selectedMode == 2) const Spacer(),
-                  BounceButton(
-                    onTap: _showSettingsPanel,
-                    child: const Padding(
-                      padding: EdgeInsets.all(12),
-                      child: Icon(
-                        CupertinoIcons.gear,
-                        color: CupertinoColors.white,
-                        size: 26,
-                      ),
+            bottom: false,
+            child: Row(
+              children: [
+                const SizedBox(width: 16),
+                // Left side content
+                if (_selectedMode == 0)
+                  Text(
+                    'Level ${_selectedLevel + 1}',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
                     ),
                   ),
-                ],
-              ),
+                if (_selectedMode == 1)
+                  Text(
+                    'Score: $_score',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                if (_selectedMode == 2)
+                  Text(
+                    'Score: $_score / $_adventureTarget',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                const Spacer(),
+                // Center: time for adventure mode
+                if (_selectedMode == 2)
+                  Builder(
+                    builder: (context) {
+                      final total = _game.elapsedTime.toInt();
+                      final h = total ~/ 3600;
+                      final m = (total % 3600) ~/ 60;
+                      final s = total % 60;
+                      String timeStr;
+                      if (h > 0) {
+                        timeStr = '${h}h ${m}m ${s}s';
+                      } else if (m > 0) {
+                        timeStr = '${m}m ${s}s';
+                      } else {
+                        timeStr = '${s}s';
+                      }
+                      return Text(
+                        'Time: $timeStr',
+                        style: const TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
+                      );
+                    },
+                  ),
+                if (_selectedMode == 2) const Spacer(),
+                GestureDetector(
+                  onTap: _showSettingsPanel,
+                  child: const Padding(
+                    padding: EdgeInsets.all(12),
+                    child: Icon(
+                      CupertinoIcons.gear,
+                      color: CupertinoColors.white,
+                      size: 26,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+              ],
             ),
           ),
           // "Start Game" waiting screen
@@ -240,7 +240,7 @@ class _GamePageState extends State<GamePage> {
                     const DancingBubblesWidget(width: 220, height: 40),
                     const SizedBox(height: 24),
                   ],
-                  BounceButton(
+                  GestureDetector(
                     onTap: _startGame,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
@@ -314,7 +314,7 @@ class _GamePageState extends State<GamePage> {
                           runSpacing: 8,
                           children: List.generate(_modes.length, (index) {
                             final isSelected = index == _selectedMode;
-                            return BounceButton(
+                            return GestureDetector(
                               onTap: () {
                                 setState(() {
                                   _selectedMode = index;
@@ -402,7 +402,7 @@ class _GamePageState extends State<GamePage> {
                                   runSpacing: 8,
                                   children: List.generate(7, (index) {
                                     final isSelected = index == _selectedLevel;
-                                    return BounceButton(
+                                    return GestureDetector(
                                       onTap: () {
                                         if (index != _selectedLevel) {
                                           setState(() {
@@ -474,13 +474,13 @@ class _GamePageState extends State<GamePage> {
                           Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              BounceButton(
+                              GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     _setAdventureTarget(_adventureTarget - 10);
                                   });
                                 },
-                                onLongPressStart: () {
+                                onLongPressStart: (_) {
                                   _holdTimer = Timer.periodic(
                                     const Duration(milliseconds: 100),
                                     (_) {
@@ -492,7 +492,7 @@ class _GamePageState extends State<GamePage> {
                                     },
                                   );
                                 },
-                                onLongPressEnd: () {
+                                onLongPressEnd: (_) {
                                   _holdTimer?.cancel();
                                   _holdTimer = null;
                                 },
@@ -550,13 +550,13 @@ class _GamePageState extends State<GamePage> {
                                 ),
                               ),
                               const SizedBox(width: 10),
-                              BounceButton(
+                              GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     _setAdventureTarget(_adventureTarget + 10);
                                   });
                                 },
-                                onLongPressStart: () {
+                                onLongPressStart: (_) {
                                   _holdTimer = Timer.periodic(
                                     const Duration(milliseconds: 100),
                                     (_) {
@@ -568,7 +568,7 @@ class _GamePageState extends State<GamePage> {
                                     },
                                   );
                                 },
-                                onLongPressEnd: () {
+                                onLongPressEnd: (_) {
                                   _holdTimer?.cancel();
                                   _holdTimer = null;
                                 },
@@ -587,7 +587,7 @@ class _GamePageState extends State<GamePage> {
                         const SizedBox(height: 20),
                         Align(
                           alignment: Alignment.centerLeft,
-                          child: BounceButton(
+                          child: GestureDetector(
                             onTap: () {
                               _game.clearState();
                               // Unpause briefly to render cleared state
@@ -769,79 +769,6 @@ class _GamePageState extends State<GamePage> {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-/// iOS-style bounce button with water drop scale animation.
-class BounceButton extends StatefulWidget {
-  final Widget child;
-  final VoidCallback? onTap;
-  final VoidCallback? onLongPressStart;
-  final VoidCallback? onLongPressEnd;
-
-  const BounceButton({
-    super.key,
-    required this.child,
-    this.onTap,
-    this.onLongPressStart,
-    this.onLongPressEnd,
-  });
-
-  @override
-  State<BounceButton> createState() => _BounceButtonState();
-}
-
-class _BounceButtonState extends State<BounceButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 120),
-      reverseDuration: const Duration(milliseconds: 200),
-    );
-    _scale = Tween<double>(
-      begin: 1.0,
-      end: 0.85,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap?.call();
-      },
-      onTapCancel: () => _controller.reverse(),
-      onLongPressStart: (_) {
-        _controller.forward();
-        widget.onLongPressStart?.call();
-      },
-      onLongPressEnd: (_) {
-        _controller.reverse();
-        widget.onLongPressEnd?.call();
-      },
-      child: AnimatedBuilder(
-        animation: _scale,
-        builder: (context, child) {
-          return Transform.scale(scale: _scale.value, child: child);
-        },
-        child: widget.child,
       ),
     );
   }
