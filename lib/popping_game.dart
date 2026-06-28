@@ -42,12 +42,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   // Reusable paint objects for trail rendering
   final Paint _trailGlowPaint =
       Paint()
-        ..strokeWidth = 6.0
+        ..strokeWidth = 4.0
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
   final Paint _trailCorePaint =
       Paint()
-        ..strokeWidth = 2.0
+        ..strokeWidth = 1.5
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
 
@@ -172,7 +172,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         final nx = -dy * invLen;
         final ny = dx * invLen;
         final jagAmount =
-            (i % 2 == 0 ? 1 : -1) * (3.0 + (i * 7 % 5).toDouble());
+            (i % 2 == 0 ? 1 : -1) * (5.0 + (i * 7 % 5).toDouble());
         final midX = (prev.position.x + curr.position.x) * 0.5 + nx * jagAmount;
         final midY = (prev.position.y + curr.position.y) * 0.5 + ny * jagAmount;
 
@@ -182,10 +182,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
               ..lineTo(midX, midY)
               ..lineTo(curr.position.x, curr.position.y);
 
-        glowPaint.color = Color.fromRGBO(68, 136, 255, opacity * 0.4);
+        glowPaint.color = Color.fromRGBO(100, 255, 220, opacity * 0.6);
         canvas.drawPath(path, glowPaint);
 
-        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.9);
+        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.95);
         canvas.drawPath(path, corePaint);
       }
     }
@@ -530,7 +530,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   Vector2? _lastDragPoint;
   final List<_TrailPoint> _trailPoints = [];
-  static const double _trailFadeDuration = 0.3; // seconds to fade out
+  static const double _trailFadeDuration = 0.5; // seconds to fade out
 
   @override
   void onPanStart(DragStartInfo info) {
