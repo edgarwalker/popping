@@ -89,9 +89,11 @@ class _GamePageState extends State<GamePage> {
       setState(() {
         _waitingToStart = true;
         _isGameOver = true;
-        _score = 0;
+        if (_selectedMode != 2) {
+          _score = 0;
+        }
       });
-      // Don't pause the engine — let the sad cat keep animating
+      // Don't pause the engine — let animations keep running
       // Game logic is already stopped via _gameOverTriggered
     };
     _game.adventureTarget = _adventureTarget;
