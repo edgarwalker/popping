@@ -54,6 +54,7 @@ class _GamePageState extends State<GamePage> {
     if (_selectedMode == 2) {
       _score = 0;
       _waitingToStart = true;
+      _isGameOver = false;
       _game.clearState();
       _game.paused = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -331,6 +332,7 @@ class _GamePageState extends State<GamePage> {
                                   }
                                   _game.setMode(_selectedMode);
                                   _waitingToStart = true;
+                                  _isGameOver = false;
                                   _score = 0;
                                   _game.clearState();
                                   _game.paused = false;
@@ -411,6 +413,7 @@ class _GamePageState extends State<GamePage> {
                                           setState(() {
                                             _selectedLevel = index;
                                             _waitingToStart = true;
+                                            _isGameOver = false;
                                             _score = 0;
                                           });
                                           _game.setLevel(index);
