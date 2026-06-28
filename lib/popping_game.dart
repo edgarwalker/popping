@@ -349,18 +349,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       }
     }
 
-    // Show "Well Done" at center using bubble fragments
-    add(
-      BubbleText(
-        text: 'Well Done',
-        position: Vector2(size.x / 2, size.y / 2),
-        fontSize: 48,
-        color: const Color(0xFFFFDD00),
-      ),
-    );
-
-    // Dancing bubbles below the text
-    add(DancingBubbles(position: Vector2(size.x / 2, size.y / 2 + 50)));
+    // Notify UI to show Well Done + dancing bubbles + Start Game
+    Future.delayed(const Duration(milliseconds: 800), () {
+      onGameOver?.call();
+    });
   }
 
   /// In adventure mode, divide target into 7 parts.

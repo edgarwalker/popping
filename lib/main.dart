@@ -4,6 +4,9 @@ import 'dart:ui';
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 
+import 'bubble_text_widget.dart';
+import 'dancing_bubbles_widget.dart';
+
 import 'popping_game.dart';
 
 void main() {
@@ -225,6 +228,16 @@ class _GamePageState extends State<GamePage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  if (_isGameOver && _selectedMode == 2) ...[
+                    const BubbleTextWidget(
+                      text: 'Well Done',
+                      fontSize: 42,
+                      color: Color(0xFFFFDD00),
+                    ),
+                    const SizedBox(height: 12),
+                    const DancingBubblesWidget(width: 220, height: 40),
+                    const SizedBox(height: 24),
+                  ],
                   BounceButton(
                     onTap: _startGame,
                     child: Container(
