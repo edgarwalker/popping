@@ -1,28 +1,61 @@
 import 'dart:math';
 
-import 'package:flame/components.dart';
-import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart';
 
-/// A cute sad cat drawn with Canvas, with animated tears and swaying tail.
-class SadCat extends PositionComponent {
-  SadCat({required Vector2 position, double scale = 1.0})
-    : _scale = scale,
-      super(position: position, anchor: Anchor.center, priority: 200);
+/// A Flutter widget that renders an animated sad cat using CustomPainter.
+class SadCatWidget extends StatefulWidget {
+  final double size;
 
-  final double _scale;
-  double _elapsed = 0.0;
+  const SadCatWidget({super.key, this.size = 120});
 
   @override
-  void update(double dt) {
-    super.update(dt);
-    _elapsed += dt;
+  State<SadCatWidget> createState() => _SadCatWidgetState();
+}
+
+class _SadCatWidgetState extends State<SadCatWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 10),
+    )..repeat();
   }
 
   @override
-  void render(Canvas canvas) {
-    super.render(canvas);
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return CustomPaint(
+          size: Size(widget.size, widget.size),
+          painter: _SadCatPainter(elapsed: _controller.value * 10.0),
+        );
+      },
+    );
+  }
+}
+
+class _SadCatPainter extends CustomPainter {
+  final double elapsed;
+
+  _SadCatPainter({required this.elapsed});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final scale = size.width / 120.0;
     canvas.save();
-    canvas.scale(_scale);
+    canvas.translate(size.width / 2, size.height / 2);
+    canvas.scale(scale);
 
     _drawTail(canvas);
     _drawFeet(canvas);
@@ -44,8 +77,7 @@ class SadCat extends PositionComponent {
           ..strokeCap = StrokeCap.round
           ..style = PaintingStyle.stroke;
 
-    // Smooth gentle bend with slow sway
-    final sway = sin(_elapsed * 4.0) * 8.0;
+    final sway = sin(elapsed * 4.0) * 8.0;
     final path =
         Path()
           ..moveTo(-24, 40)
@@ -57,7 +89,6 @@ class SadCat extends PositionComponent {
             -35 + sway,
             -50,
           );
-
     canvas.drawPath(path, tailPaint);
   }
 
@@ -67,29 +98,23 @@ class SadCat extends PositionComponent {
           ..color = const Color(0xFFBBCCDD)
           ..style = PaintingStyle.fill;
 
-    // Front left paw
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(-20, 72), width: 18, height: 13),
       footPaint,
     );
-    // Front right paw
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(20, 72), width: 18, height: 13),
       footPaint,
     );
 
-    // Paw pads (small circles)
     final padPaint =
         Paint()
           ..color = const Color(0xFFFFCCDD)
           ..style = PaintingStyle.fill;
 
-    // Left paw pads
     canvas.drawCircle(const Offset(-23, 72), 2.5, padPaint);
     canvas.drawCircle(const Offset(-20, 70), 2.5, padPaint);
     canvas.drawCircle(const Offset(-17, 72), 2.5, padPaint);
-
-    // Right paw pads
     canvas.drawCircle(const Offset(17, 72), 2.5, padPaint);
     canvas.drawCircle(const Offset(20, 70), 2.5, padPaint);
     canvas.drawCircle(const Offset(23, 72), 2.5, padPaint);
@@ -101,45 +126,10 @@ class SadCat extends PositionComponent {
           ..color = const Color(0xFFCCDDEE)
           ..style = PaintingStyle.fill;
 
-    // Oval body (wider than tall)
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(0, 40), width: 84, height: 64),
       bodyPaint,
     );
-  }
-
-  void _drawArms(Canvas canvas) {
-    final armPaint =
-        Paint()
-          ..color = const Color(0xFFCCDDEE)
-          ..strokeWidth = 7.0
-          ..strokeCap = StrokeCap.round
-          ..style = PaintingStyle.stroke;
-
-    // Animated wiping motion — paws move side to side below eyes
-    final wipe = sin(_elapsed * 3.0) * 3.5;
-
-    // Left arm from body side up to right below left eye
-    final path1 =
-        Path()
-          ..moveTo(-28, 28)
-          ..quadraticBezierTo(-30, 2, -10 + wipe, -7);
-    canvas.drawPath(path1, armPaint);
-
-    // Right arm from body side up to right below right eye
-    final path2 =
-        Path()
-          ..moveTo(28, 28)
-          ..quadraticBezierTo(30, 2, 10 - wipe, -7);
-    canvas.drawPath(path2, armPaint);
-
-    // Paw tips right below eyes
-    final pawPaint =
-        Paint()
-          ..color = const Color(0xFFBBCCDD)
-          ..style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(-10 + wipe, -7), 5, pawPaint);
-    canvas.drawCircle(Offset(10 - wipe, -7), 5, pawPaint);
   }
 
   void _drawHead(Canvas canvas) {
@@ -148,7 +138,6 @@ class SadCat extends PositionComponent {
           ..color = const Color(0xFFDDEEFF)
           ..style = PaintingStyle.fill;
 
-    // Round head
     canvas.drawCircle(const Offset(0, -12), 28, headPaint);
   }
 
@@ -162,10 +151,8 @@ class SadCat extends PositionComponent {
           ..color = const Color(0xFFFFCCDD)
           ..style = PaintingStyle.fill;
 
-    // Gentle ear sway
-    final earSway = sin(_elapsed * 2.5) * 2.0;
+    final earSway = sin(elapsed * 2.5) * 2.0;
 
-    // Left ear (rounded, swaying)
     final leftEar =
         Path()
           ..moveTo(-20, -32)
@@ -182,7 +169,6 @@ class SadCat extends PositionComponent {
           ..close();
     canvas.drawPath(leftInner, innerEarPaint);
 
-    // Right ear (rounded, swaying)
     final rightEar =
         Path()
           ..moveTo(20, -32)
@@ -206,7 +192,6 @@ class SadCat extends PositionComponent {
           ..color = const Color(0xFF334455)
           ..style = PaintingStyle.fill;
 
-    // Sad eyes (droopy arcs)
     final leftEyePath =
         Path()..addArc(
           Rect.fromCenter(center: const Offset(-10, -15), width: 10, height: 8),
@@ -223,7 +208,6 @@ class SadCat extends PositionComponent {
         );
     canvas.drawPath(rightEyePath, eyePaint);
 
-    // Eyebrows (angled down in center for sadness)
     final browPaint =
         Paint()
           ..color = const Color(0xFF556677)
@@ -234,7 +218,6 @@ class SadCat extends PositionComponent {
     canvas.drawLine(const Offset(-14, -23), const Offset(-7, -21), browPaint);
     canvas.drawLine(const Offset(14, -23), const Offset(7, -21), browPaint);
 
-    // Small nose
     final nosePaint =
         Paint()
           ..color = const Color(0xFFFFAABB)
@@ -244,7 +227,6 @@ class SadCat extends PositionComponent {
       nosePaint,
     );
 
-    // Sad mouth (frown)
     final mouthPaint =
         Paint()
           ..color = const Color(0xFF556677)
@@ -260,116 +242,84 @@ class SadCat extends PositionComponent {
         );
     canvas.drawPath(mouthPath, mouthPaint);
 
-    // Whiskers
     final whiskerPaint =
         Paint()
           ..color = const Color(0xFF99AABB)
           ..strokeWidth = 1.0
           ..style = PaintingStyle.stroke;
 
-    canvas.drawLine(
-      const Offset(-12, -7),
-      const Offset(-26, -10),
-      whiskerPaint,
-    );
+    canvas.drawLine(const Offset(-12, -7), const Offset(-26, -10), whiskerPaint);
     canvas.drawLine(const Offset(-12, -4), const Offset(-26, -3), whiskerPaint);
     canvas.drawLine(const Offset(12, -7), const Offset(26, -10), whiskerPaint);
     canvas.drawLine(const Offset(12, -4), const Offset(26, -3), whiskerPaint);
   }
 
-  void _drawTears(Canvas canvas) {
-    final tearPaint =
+  void _drawArms(Canvas canvas) {
+    final armPaint =
         Paint()
-          ..color = const Color(0xAA88CCFF)
+          ..color = const Color(0xFFCCDDEE)
+          ..strokeWidth = 7.0
+          ..strokeCap = StrokeCap.round
+          ..style = PaintingStyle.stroke;
+
+    final wipe = sin(elapsed * 3.0) * 3.5;
+
+    final path1 =
+        Path()
+          ..moveTo(-28, 28)
+          ..quadraticBezierTo(-30, 2, -10 + wipe, -7);
+    canvas.drawPath(path1, armPaint);
+
+    final path2 =
+        Path()
+          ..moveTo(28, 28)
+          ..quadraticBezierTo(30, 2, 10 - wipe, -7);
+    canvas.drawPath(path2, armPaint);
+
+    final pawPaint =
+        Paint()
+          ..color = const Color(0xFFBBCCDD)
           ..style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(-10 + wipe, -7), 5, pawPaint);
+    canvas.drawCircle(Offset(10 - wipe, -7), 5, pawPaint);
+  }
+
+  void _drawTears(Canvas canvas) {
+    final tearPaint = Paint()..style = PaintingStyle.fill;
 
     // Wave 1
-    final tearCycle = _elapsed % 1.0;
-    final tearY = tearCycle * 22.0;
-    final tearOpacity = (1.0 - tearCycle).clamp(0.0, 1.0);
-
-    tearPaint.color = Color.fromRGBO(136, 204, 255, tearOpacity * 0.7);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(-10, -2 + tearY),
-        width: 3,
-        height: 4 + tearCycle * 2,
-      ),
-      tearPaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(10, -2 + tearY),
-        width: 3,
-        height: 4 + tearCycle * 2,
-      ),
-      tearPaint,
-    );
+    final tc1 = elapsed % 1.0;
+    final ty1 = tc1 * 22.0;
+    final to1 = (1.0 - tc1).clamp(0.0, 1.0);
+    tearPaint.color = Color.fromRGBO(136, 204, 255, to1 * 0.7);
+    canvas.drawOval(Rect.fromCenter(center: Offset(-10, -2 + ty1), width: 3, height: 4 + tc1 * 2), tearPaint);
+    canvas.drawOval(Rect.fromCenter(center: Offset(10, -2 + ty1), width: 3, height: 4 + tc1 * 2), tearPaint);
 
     // Wave 2
-    final tc2 = (_elapsed + 0.33) % 1.0;
+    final tc2 = (elapsed + 0.33) % 1.0;
     final ty2 = tc2 * 22.0;
     final to2 = (1.0 - tc2).clamp(0.0, 1.0);
     tearPaint.color = Color.fromRGBO(136, 204, 255, to2 * 0.6);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(-12, -1 + ty2),
-        width: 2.5,
-        height: 3.5 + tc2 * 2,
-      ),
-      tearPaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(12, -1 + ty2),
-        width: 2.5,
-        height: 3.5 + tc2 * 2,
-      ),
-      tearPaint,
-    );
+    canvas.drawOval(Rect.fromCenter(center: Offset(-12, -1 + ty2), width: 2.5, height: 3.5 + tc2 * 2), tearPaint);
+    canvas.drawOval(Rect.fromCenter(center: Offset(12, -1 + ty2), width: 2.5, height: 3.5 + tc2 * 2), tearPaint);
 
     // Wave 3
-    final tc3 = (_elapsed + 0.66) % 1.0;
+    final tc3 = (elapsed + 0.66) % 1.0;
     final ty3 = tc3 * 22.0;
     final to3 = (1.0 - tc3).clamp(0.0, 1.0);
     tearPaint.color = Color.fromRGBO(136, 204, 255, to3 * 0.5);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(-8, -2 + ty3),
-        width: 2,
-        height: 3 + tc3 * 2,
-      ),
-      tearPaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(8, -2 + ty3),
-        width: 2,
-        height: 3 + tc3 * 2,
-      ),
-      tearPaint,
-    );
+    canvas.drawOval(Rect.fromCenter(center: Offset(-8, -2 + ty3), width: 2, height: 3 + tc3 * 2), tearPaint);
+    canvas.drawOval(Rect.fromCenter(center: Offset(8, -2 + ty3), width: 2, height: 3 + tc3 * 2), tearPaint);
 
     // Wave 4
-    final tc4 = (_elapsed + 0.5) % 1.0;
+    final tc4 = (elapsed + 0.5) % 1.0;
     final ty4 = tc4 * 22.0;
     final to4 = (1.0 - tc4).clamp(0.0, 1.0);
     tearPaint.color = Color.fromRGBO(150, 220, 255, to4 * 0.55);
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(-11, 0 + ty4),
-        width: 2,
-        height: 3 + tc4 * 1.5,
-      ),
-      tearPaint,
-    );
-    canvas.drawOval(
-      Rect.fromCenter(
-        center: Offset(11, 0 + ty4),
-        width: 2,
-        height: 3 + tc4 * 1.5,
-      ),
-      tearPaint,
-    );
+    canvas.drawOval(Rect.fromCenter(center: Offset(-11, 0 + ty4), width: 2, height: 3 + tc4 * 1.5), tearPaint);
+    canvas.drawOval(Rect.fromCenter(center: Offset(11, 0 + ty4), width: 2, height: 3 + tc4 * 1.5), tearPaint);
   }
+
+  @override
+  bool shouldRepaint(_SadCatPainter oldDelegate) => true;
 }
