@@ -51,7 +51,7 @@ class _GamePageState extends State<GamePage> {
   late TextEditingController _targetController;
 
   void _setAdventureTarget(int value) {
-    _adventureTarget = value.clamp(50, 10000000000);
+    _adventureTarget = value.clamp(10, 10000000000);
     _game.adventureTarget = _adventureTarget;
     _targetController.text = _adventureTarget.toString();
     if (_selectedMode == 2) {
@@ -146,82 +146,82 @@ class _GamePageState extends State<GamePage> {
           // Top row: score left, gear right
           SafeArea(
             bottom: false,
-            child: Row(
-              children: [
-                const SizedBox(width: 16),
-                // Left side content
-                if (_selectedMode == 0)
-                  Text(
-                    'Level ${_selectedLevel + 1}',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 7),
+              child: Row(
+                children: [
+                  const SizedBox(width: 7),
+                  // Left side content
+                  if (_selectedMode == 0)
+                    Text(
+                      'Level ${_selectedLevel + 1}',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
-                  ),
-                if (_selectedMode == 1)
-                  Text(
-                    'Score: $_score',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
+                  if (_selectedMode == 1)
+                    Text(
+                      'Score: $_score',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
-                  ),
-                if (_selectedMode == 2)
-                  Text(
-                    'Score: $_score / $_adventureTarget',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
+                  if (_selectedMode == 2)
+                    Text(
+                      'Score: $_score / $_adventureTarget',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
-                  ),
-                const Spacer(),
-                // Center: time for adventure mode
-                if (_selectedMode == 2)
-                  Builder(
-                    builder: (context) {
-                      final total = _game.elapsedTime.toInt();
-                      final h = total ~/ 3600;
-                      final m = (total % 3600) ~/ 60;
-                      final s = total % 60;
-                      String timeStr;
-                      if (h > 0) {
-                        timeStr = '${h}h ${m}m ${s}s';
-                      } else if (m > 0) {
-                        timeStr = '${m}m ${s}s';
-                      } else {
-                        timeStr = '${s}s';
-                      }
-                      return Text(
-                        'Time: $timeStr',
-                        style: const TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      );
-                    },
-                  ),
-                if (_selectedMode == 2) const Spacer(),
-                GestureDetector(
-                  onTap: _showSettingsPanel,
-                  child: const Padding(
-                    padding: EdgeInsets.all(12),
-                    child: Icon(
+                  const Spacer(),
+                  // Center: time for adventure mode
+                  if (_selectedMode == 2)
+                    Builder(
+                      builder: (context) {
+                        final total = _game.elapsedTime.toInt();
+                        final h = total ~/ 3600;
+                        final m = (total % 3600) ~/ 60;
+                        final s = total % 60;
+                        String timeStr;
+                        if (h > 0) {
+                          timeStr = '${h}h ${m}m ${s}s';
+                        } else if (m > 0) {
+                          timeStr = '${m}m ${s}s';
+                        } else {
+                          timeStr = '${s}s';
+                        }
+                        return Text(
+                          'Time: $timeStr',
+                          style: const TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        );
+                      },
+                    ),
+                  if (_selectedMode == 2) const Spacer(),
+                  GestureDetector(
+                    onTap: _showSettingsPanel,
+                    child: const Icon(
                       CupertinoIcons.gear,
                       color: CupertinoColors.white,
                       size: 26,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-              ],
+                  const SizedBox(width: 7),
+                ],
+              ),
             ),
           ),
           // "Start Game" waiting screen
@@ -526,9 +526,9 @@ class _GamePageState extends State<GamePage> {
                                   onChanged: (value) {
                                     final parsed = int.tryParse(value);
                                     if (parsed != null) {
-                                      if (parsed < 50) {
-                                        _adventureTarget = 50;
-                                        _targetController.text = '50';
+                                      if (parsed < 10) {
+                                        _adventureTarget = 10;
+                                        _targetController.text = '10';
                                         _targetController.selection =
                                             TextSelection.fromPosition(
                                               TextPosition(
@@ -540,7 +540,7 @@ class _GamePageState extends State<GamePage> {
                                             );
                                       } else {
                                         _adventureTarget = parsed.clamp(
-                                          50,
+                                          10,
                                           10000000000,
                                         );
                                       }

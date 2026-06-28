@@ -20,7 +20,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
-  int adventureTarget = 1000; // target score for adventure mode
+  int adventureTarget = 10; // target score for adventure mode
   double volume = 4.0 / 7.0; // 0.0 to 1.0
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
