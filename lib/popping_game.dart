@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 
 import 'bubble.dart';
 import 'level_config.dart';
+import 'sad_cat.dart';
 
 class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   final Random _random = Random();
@@ -388,6 +389,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         _score = 0;
         onScoreUpdate?.call(_score);
 
+        // Show sad cat at Game Over position (1/4 from top)
+        add(SadCat(position: Vector2(size.x / 2, size.y / 4), scale: 1.5));
+
         // Delay lightning bolt by 1 second so user sees the crash animation first
         Future.delayed(const Duration(milliseconds: 1000), () {
           _startGameOverLightning();
@@ -424,11 +428,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Clear swipe state
     _lastDragPoint = null;
     _trailPoints.clear();
-    // Remove all existing bubbles and text
+    // Remove all existing bubbles, text, and sad cat
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
     );
+    children.whereType<SadCat>().toList().forEach((c) => c.removeFromParent());
     // Resume Flame engine
     paused = false;
     // Lazy init audio on first start
@@ -525,6 +530,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
     );
+    children.whereType<SadCat>().toList().forEach((c) => c.removeFromParent());
     paused = true;
   }
 

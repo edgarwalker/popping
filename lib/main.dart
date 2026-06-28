@@ -88,11 +88,8 @@ class _GamePageState extends State<GamePage> {
         _isGameOver = true;
         _score = 0;
       });
-      // Don't clear state immediately — let the crash result stay visible
-      // The game is already paused by popping_game.dart
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _game.paused = true;
-      });
+      // Don't pause the engine — let the sad cat keep animating
+      // Game logic is already stopped via _gameOverTriggered
     };
     _game.adventureTarget = _adventureTarget;
     _game.paused = true; // Start paused, waiting for "Start Game"
@@ -105,7 +102,7 @@ class _GamePageState extends State<GamePage> {
         _game.paused = true;
         _timeDisplayTimer?.cancel();
       } else {
-        if (_waitingToStart) {
+        if (_waitingToStart && !_isGameOver) {
           _game.paused = true;
         } else {
           _game.paused = false;
@@ -223,23 +220,6 @@ class _GamePageState extends State<GamePage> {
             ),
           ),
           // "Start Game" waiting screen
-          if (_waitingToStart && _isGameOver)
-            Positioned(
-              top: MediaQuery.of(context).size.height / 4,
-              left: 0,
-              right: 0,
-              child: const Center(
-                child: Text(
-                  'Game Over !',
-                  style: TextStyle(
-                    color: CupertinoColors.white,
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    decoration: TextDecoration.none,
-                  ),
-                ),
-              ),
-            ),
           if (_waitingToStart)
             Center(
               child: Column(
