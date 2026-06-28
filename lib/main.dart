@@ -304,10 +304,10 @@ class _GamePageState extends State<GamePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Mode: ${_modes[_selectedMode]}',
+                          'Mode',
                           style: const TextStyle(
                             color: CupertinoColors.white,
-                            fontSize: 14,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.none,
                           ),
@@ -343,8 +343,8 @@ class _GamePageState extends State<GamePage> {
                               },
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 8,
+                                  horizontal: 10,
+                                  vertical: 5,
                                 ),
                                 decoration: BoxDecoration(
                                   color:
@@ -370,7 +370,7 @@ class _GamePageState extends State<GamePage> {
                                             : CupertinoColors.white.withValues(
                                               alpha: 0.7,
                                             ),
-                                    fontSize: 13,
+                                    fontSize: 16,
                                     fontWeight: FontWeight.bold,
                                     decoration: TextDecoration.none,
                                   ),
@@ -388,13 +388,13 @@ class _GamePageState extends State<GamePage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Level: ${_selectedLevel + 1}',
+                                  'Level',
                                   style: TextStyle(
                                     color:
                                         _selectedMode == 0
                                             ? CupertinoColors.white
                                             : CupertinoColors.systemGrey,
-                                    fontSize: 14,
+                                    fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     decoration: TextDecoration.none,
                                   ),
@@ -423,8 +423,8 @@ class _GamePageState extends State<GamePage> {
                                         }
                                       },
                                       child: Container(
-                                        width: 28,
-                                        height: 28,
+                                        width: 34,
+                                        height: 34,
                                         alignment: Alignment.center,
                                         decoration: BoxDecoration(
                                           color:
@@ -448,7 +448,7 @@ class _GamePageState extends State<GamePage> {
                                                     ? CupertinoColors.white
                                                     : CupertinoColors.white
                                                         .withValues(alpha: 0.7),
-                                            fontSize: 13,
+                                            fontSize: 16,
                                             fontWeight: FontWeight.bold,
                                             decoration: TextDecoration.none,
                                           ),
@@ -467,7 +467,7 @@ class _GamePageState extends State<GamePage> {
                             'Target',
                             style: TextStyle(
                               color: CupertinoColors.white,
-                              fontSize: 14,
+                              fontSize: 18,
                               fontWeight: FontWeight.bold,
                               decoration: TextDecoration.none,
                             ),
@@ -503,7 +503,7 @@ class _GamePageState extends State<GamePage> {
                                   child: Icon(
                                     CupertinoIcons.minus_circle,
                                     color: CupertinoColors.white,
-                                    size: 28,
+                                    size: 34,
                                   ),
                                 ),
                               ),
@@ -515,7 +515,7 @@ class _GamePageState extends State<GamePage> {
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: CupertinoColors.white,
-                                    fontSize: 14,
+                                    fontSize: 18,
                                   ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
@@ -579,7 +579,7 @@ class _GamePageState extends State<GamePage> {
                                   child: Icon(
                                     CupertinoIcons.plus_circle,
                                     color: CupertinoColors.white,
-                                    size: 28,
+                                    size: 34,
                                   ),
                                 ),
                               ),
@@ -726,7 +726,7 @@ class _GamePageState extends State<GamePage> {
                                   ? CupertinoIcons.speaker_slash_fill
                                   : CupertinoIcons.speaker_2_fill,
                               color: CupertinoColors.white,
-                              size: 18,
+                              size: 22,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -742,8 +742,8 @@ class _GamePageState extends State<GamePage> {
                                   horizontal: 6,
                                 ),
                                 child: Container(
-                                  width: 30,
-                                  height: 14,
+                                  width: 38,
+                                  height: 18,
                                   decoration: BoxDecoration(
                                     color:
                                         isActive
