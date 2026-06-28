@@ -46,17 +46,18 @@ class Bubble extends CircleComponent
         HSLColor.fromAHSL(
           1.0,
           random.nextDouble() * 360,
-          0.4 + random.nextDouble() * 0.6,
-          0.3 + random.nextDouble() * 0.6,
+          0.9 + random.nextDouble() * 0.1,
+          0.7 + random.nextDouble() * 0.15,
         ).toColor();
 
-    _colorInner = _color.withValues(alpha: 0.9);
-    _colorOuter = _color.withValues(alpha: 0.3);
+    _colorInner = _color.withValues(alpha: 1.0);
+    _colorOuter = _color.withValues(alpha: 0.7);
 
     paint =
         Paint()
           ..shader = RadialGradient(
-            colors: [_colorInner, _colorOuter],
+            colors: [const Color(0xBBFFFFFF), _colorInner, _colorOuter],
+            stops: const [0.0, 0.4, 1.0],
           ).createShader(
             Rect.fromCircle(center: Offset.zero, radius: _initialRadius),
           );
@@ -89,7 +90,8 @@ class Bubble extends CircleComponent
     if ((newRadius - radius).abs() > 2.0) {
       radius = newRadius;
       paint.shader = RadialGradient(
-        colors: [_colorInner, _colorOuter],
+        colors: [const Color(0xBBFFFFFF), _colorInner, _colorOuter],
+        stops: const [0.0, 0.4, 1.0],
       ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
     } else {
       radius = newRadius;
@@ -239,7 +241,7 @@ class Bubble extends CircleComponent
 
   void _generateCrashParticles() {
     final random = Random();
-    // Main red fragments — more and bigger
+    // Main fragments — fresh and vibrant
     for (int i = 0; i < 70; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
@@ -250,13 +252,13 @@ class Bubble extends CircleComponent
           color:
               Color.lerp(
                 _color,
-                const Color(0xFFFF3333),
-                0.5 + random.nextDouble() * 0.3,
+                const Color(0xFFFFCCDD),
+                0.25 + random.nextDouble() * 0.3,
               )!,
         ),
       );
     }
-    // Orange/yellow sparks — more and bigger
+    // Bright sparks — fresh mint/cyan/yellow
     for (int i = 0; i < 25; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
@@ -266,8 +268,8 @@ class Bubble extends CircleComponent
           size: 8.0 + random.nextDouble() * 10.0,
           color:
               Color.lerp(
-                const Color(0xFFFF8800),
-                const Color(0xFFFFFF00),
+                const Color(0xFF88FFDD),
+                const Color(0xFFFFFFAA),
                 random.nextDouble(),
               )!,
         ),

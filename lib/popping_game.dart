@@ -122,7 +122,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   @override
-  Color backgroundColor() => const Color(0xFF1A1A2E);
+  Color backgroundColor() => const Color(0xFF3D3D6B);
 
   @override
   void render(Canvas canvas) {
