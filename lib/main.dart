@@ -38,7 +38,7 @@ class _GamePageState extends State<GamePage> {
   bool _settingsOpen = false;
   bool _waitingToStart = true;
   bool _isGameOver = false;
-  int _adventureTarget = 1000;
+  int _adventureTarget = 10;
   int _volume = 4; // 0-7, app volume level
   int _volumeBeforeMute = 4; // remember volume before mute
   final GlobalKey _volumeKey = GlobalKey();
@@ -486,7 +486,7 @@ class _GamePageState extends State<GamePage> {
                                   child: Icon(
                                     CupertinoIcons.minus_circle,
                                     color: CupertinoColors.white,
-                                    size: 34,
+                                    size: 28,
                                   ),
                                 ),
                               ),
@@ -498,7 +498,7 @@ class _GamePageState extends State<GamePage> {
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     color: CupertinoColors.white,
-                                    fontSize: 18,
+                                    fontSize: 15,
                                   ),
                                   decoration: BoxDecoration(
                                     border: Border.all(
@@ -562,7 +562,7 @@ class _GamePageState extends State<GamePage> {
                                   child: Icon(
                                     CupertinoIcons.plus_circle,
                                     color: CupertinoColors.white,
-                                    size: 34,
+                                    size: 28,
                                   ),
                                 ),
                               ),

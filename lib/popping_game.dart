@@ -8,6 +8,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
 import 'bubble.dart';
+import 'bubble_text.dart';
+import 'dancing_bubbles.dart';
 import 'level_config.dart';
 
 class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
@@ -84,6 +86,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
     );
+    children.whereType<DancingBubbles>().toList().forEach(
+      (d) => d.removeFromParent(),
+    );
+    children.whereType<BubbleText>().toList().forEach(
+      (b) => b.removeFromParent(),
+    );
     if (_mode == 2) {
       // Adventure starts at level 1
       _currentLevel = 0;
@@ -104,6 +112,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
+    );
+    children.whereType<DancingBubbles>().toList().forEach(
+      (d) => d.removeFromParent(),
+    );
+    children.whereType<BubbleText>().toList().forEach(
+      (b) => b.removeFromParent(),
     );
     _spawnBubble();
   }
@@ -335,22 +349,18 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       }
     }
 
-    // Show "Well Done !" at center
+    // Show "Well Done" at center using bubble fragments
     add(
-      TextComponent(
-        text: 'Well Done !',
+      BubbleText(
+        text: 'Well Done',
         position: Vector2(size.x / 2, size.y / 2),
-        anchor: Anchor.center,
-        priority: 100,
-        textRenderer: TextPaint(
-          style: const TextStyle(
-            color: Color(0xFFFFFFFF),
-            fontSize: 36,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        fontSize: 48,
+        color: const Color(0xFFFFDD00),
       ),
     );
+
+    // Dancing bubbles below the text
+    add(DancingBubbles(position: Vector2(size.x / 2, size.y / 2 + 50)));
   }
 
   /// In adventure mode, divide target into 7 parts.
@@ -426,6 +436,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
+    );
+    children.whereType<DancingBubbles>().toList().forEach(
+      (d) => d.removeFromParent(),
+    );
+    children.whereType<BubbleText>().toList().forEach(
+      (b) => b.removeFromParent(),
     );
     // Resume Flame engine
     paused = false;
@@ -522,6 +538,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
     children.whereType<TextComponent>().toList().forEach(
       (t) => t.removeFromParent(),
+    );
+    children.whereType<DancingBubbles>().toList().forEach(
+      (d) => d.removeFromParent(),
+    );
+    children.whereType<BubbleText>().toList().forEach(
+      (b) => b.removeFromParent(),
     );
     paused = true;
   }
