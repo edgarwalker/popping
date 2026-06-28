@@ -54,12 +54,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   // Reusable paint objects for game-over lightning
   final Paint _boltGlowPaint =
       Paint()
-        ..strokeWidth = 8.0
+        ..strokeWidth = 16.0
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
   final Paint _boltCorePaint =
       Paint()
-        ..strokeWidth = 3.0
+        ..strokeWidth = 7.0
         ..strokeCap = StrokeCap.round
         ..style = PaintingStyle.stroke;
 
@@ -145,10 +145,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
           path.lineTo(bolt[i].dx, bolt[i].dy);
         }
 
-        glowPaint.color = Color.fromRGBO(255, 60, 60, opacity * 0.6);
+        glowPaint.color = Color.fromRGBO(255, 150, 255, opacity * 0.8);
         canvas.drawPath(path, glowPaint);
 
-        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.95);
+        corePaint.color = Color.fromRGBO(255, 255, 240, opacity * 1.0);
         canvas.drawPath(path, corePaint);
       }
     }
@@ -388,8 +388,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         _score = 0;
         onScoreUpdate?.call(_score);
 
-        // Trigger lightning bolt effect from edges to center
-        _startGameOverLightning();
+        // Delay lightning bolt by 1 second so user sees the crash animation first
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          _startGameOverLightning();
+        });
 
         // Keep all bubbles frozen in place (don't pop them)
         // They will be cleared when the player starts a new game

@@ -29,7 +29,7 @@ class Bubble extends CircleComponent
   // Pop particles
   final List<_PopParticle> _particles = [];
   double _popElapsed = 0.0;
-  static const double _popDuration = 0.5;
+  static const double _popDuration = 1.0;
 
   late Color _color;
   late Color _colorInner;
@@ -69,9 +69,6 @@ class Bubble extends CircleComponent
   void update(double dt) {
     super.update(dt);
 
-    // Stop all activity if game is over
-    if (game.isGameOver) return;
-
     if (_popping) {
       _popElapsed += dt;
       if (_popElapsed >= _popDuration) {
@@ -79,6 +76,9 @@ class Bubble extends CircleComponent
       }
       return;
     }
+
+    // Stop growth if game is over (but popping animation above still runs)
+    if (game.isGameOver) return;
 
     // Grow the bubble continuously from center
     _elapsed += dt;
@@ -108,7 +108,7 @@ class Bubble extends CircleComponent
   }
 
   void _renderParticles(Canvas canvas) {
-    final duration = _crashedByCollision ? _popDuration * 0.7 : _popDuration;
+    final duration = _crashedByCollision ? _popDuration * 1.2 : _popDuration;
     final progress = (_popElapsed / duration).clamp(0.0, 1.0);
     final opacity = 1.0 - progress;
     final speed = _crashedByCollision ? 1.5 : 1.0;
