@@ -166,7 +166,7 @@ class Bubble extends CircleComponent
 
   @override
   void onTapDown(TapDownEvent event) {
-    if (!_popping) {
+    if (!_popping && !game.isGameOver) {
       _pop();
     }
   }

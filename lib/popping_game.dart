@@ -534,6 +534,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   @override
   void onPanStart(DragStartInfo info) {
+    if (_gameOverTriggered) return;
     _lastDragPoint = info.eventPosition.global;
     _trailPoints.add(_TrailPoint(position: _lastDragPoint!.clone()));
     _checkSwipeHit(_lastDragPoint!);
@@ -541,6 +542,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
+    if (_gameOverTriggered) return;
     final currentPoint = info.eventPosition.global;
     _trailPoints.add(_TrailPoint(position: currentPoint.clone()));
     if (_lastDragPoint != null) {
