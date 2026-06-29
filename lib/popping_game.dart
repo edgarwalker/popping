@@ -73,7 +73,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   static const double _gameOverLightningDuration = 2.0; // seconds
   List<List<Offset>> _gameOverBolts = [];
 
-  // Reusable paint objects for game-over lightning
+  // Reusable paint objects for slash trail
+  final Paint _slashGlowPaint =
+      Paint()
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  final Paint _slashCorePaint = Paint()..style = PaintingStyle.fill;
   final Paint _boltGlowPaint =
       Paint()
         ..strokeWidth = 16.0
@@ -102,16 +107,18 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _score = 0;
     _adventureComplete = false;
     onScoreUpdate?.call(_score);
-    // Remove "Well Done !" text if present
-    children.whereType<TextComponent>().toList().forEach(
-      (t) => t.removeFromParent(),
-    );
-    children.whereType<DancingBubbles>().toList().forEach(
-      (d) => d.removeFromParent(),
-    );
-    children.whereType<BubbleText>().toList().forEach(
-      (b) => b.removeFromParent(),
-    );
+    // Remove non-essential components in a single pass
+    final toRemove = <Component>[];
+    for (final child in children) {
+      if (child is TextComponent ||
+          child is DancingBubbles ||
+          child is BubbleText) {
+        toRemove.add(child);
+      }
+    }
+    for (final c in toRemove) {
+      c.removeFromParent();
+    }
     if (_mode == 2) {
       // Adventure starts at level 1
       _currentLevel = 0;
@@ -129,16 +136,18 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     onScoreUpdate?.call(_score);
     onLevelUpdate?.call(_currentLevel);
     // Remove all bubbles and "Well Done !" text
-    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
-    children.whereType<TextComponent>().toList().forEach(
-      (t) => t.removeFromParent(),
-    );
-    children.whereType<DancingBubbles>().toList().forEach(
-      (d) => d.removeFromParent(),
-    );
-    children.whereType<BubbleText>().toList().forEach(
-      (b) => b.removeFromParent(),
-    );
+    final toRemove = <Component>[];
+    for (final child in children) {
+      if (child is Bubble ||
+          child is TextComponent ||
+          child is DancingBubbles ||
+          child is BubbleText) {
+        toRemove.add(child);
+      }
+    }
+    for (final c in toRemove) {
+      c.removeFromParent();
+    }
     _spawnBubble();
   }
 
@@ -150,7 +159,13 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Clear bubbles and pause 1 second before starting the new level
     _score = 0;
     onScoreUpdate?.call(_score);
-    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
+    final toRemove = <Component>[];
+    for (final child in children) {
+      if (child is Bubble) toRemove.add(child);
+    }
+    for (final c in toRemove) {
+      c.removeFromParent();
+    }
     _paused = true;
     _pauseTimer = 0.0;
   }
@@ -248,19 +263,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       final opacity = (1.0 - newestAge / _trailFadeDuration).clamp(0.0, 1.0);
 
       // Draw glow (outer)
-      final glowPaint =
-          Paint()
-            ..color = Color.fromRGBO(200, 240, 255, opacity * 0.3)
-            ..style = PaintingStyle.fill
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawPath(glowPath, glowPaint);
+      _slashGlowPaint.color = Color.fromRGBO(200, 240, 255, opacity * 0.3);
+      canvas.drawPath(glowPath, _slashGlowPaint);
 
       // Draw core slash (inner)
-      final slashPaint =
-          Paint()
-            ..color = Color.fromRGBO(255, 255, 255, opacity * 0.9)
-            ..style = PaintingStyle.fill;
-      canvas.drawPath(slashPath, slashPaint);
+      _slashCorePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.9);
+      canvas.drawPath(slashPath, _slashCorePaint);
     }
   }
 
@@ -489,17 +497,19 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Clear swipe state
     _lastDragPoint = null;
     _trailPoints.clear();
-    // Remove all existing bubbles, text, and sad cat
-    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
-    children.whereType<TextComponent>().toList().forEach(
-      (t) => t.removeFromParent(),
-    );
-    children.whereType<DancingBubbles>().toList().forEach(
-      (d) => d.removeFromParent(),
-    );
-    children.whereType<BubbleText>().toList().forEach(
-      (b) => b.removeFromParent(),
-    );
+    // Remove all existing bubbles, text, and effects
+    final toRemove = <Component>[];
+    for (final child in children) {
+      if (child is Bubble ||
+          child is TextComponent ||
+          child is DancingBubbles ||
+          child is BubbleText) {
+        toRemove.add(child);
+      }
+    }
+    for (final c in toRemove) {
+      c.removeFromParent();
+    }
     // Resume Flame engine
     paused = false;
     // Lazy init audio on first start
@@ -509,7 +519,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       newTrack = _bgmTracks[_random.nextInt(_bgmTracks.length)];
     } while (newTrack == _currentBgmTrack && _bgmTracks.length > 1);
     _currentBgmTrack = newTrack;
-    debugPrint('BGM selected: $_currentBgmTrack');
 
     if (!_audioReady) {
       _initAudio();
@@ -649,16 +658,18 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     onScoreUpdate?.call(_score);
     _lastDragPoint = null;
     _trailPoints.clear();
-    children.whereType<Bubble>().toList().forEach((b) => b.removeFromParent());
-    children.whereType<TextComponent>().toList().forEach(
-      (t) => t.removeFromParent(),
-    );
-    children.whereType<DancingBubbles>().toList().forEach(
-      (d) => d.removeFromParent(),
-    );
-    children.whereType<BubbleText>().toList().forEach(
-      (b) => b.removeFromParent(),
-    );
+    final toRemove = <Component>[];
+    for (final child in children) {
+      if (child is Bubble ||
+          child is TextComponent ||
+          child is DancingBubbles ||
+          child is BubbleText) {
+        toRemove.add(child);
+      }
+    }
+    for (final c in toRemove) {
+      c.removeFromParent();
+    }
     paused = true;
   }
 
