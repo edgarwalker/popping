@@ -544,7 +544,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   Vector2? _lastDragPoint;
   final List<_TrailPoint> _trailPoints = [];
-  static const double _trailFadeDuration = 0.5; // seconds to fade out
+  static const double _trailFadeDuration = 0.25; // seconds to fade out
 
   @override
   void onPanStart(DragStartInfo info) {
@@ -558,7 +558,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void onPanUpdate(DragUpdateInfo info) {
     if (_gameOverTriggered) return;
     final currentPoint = info.eventPosition.global;
-    _trailPoints.add(_TrailPoint(position: currentPoint.clone()));
+    // Only add trail point if moved at least 10px from last point
+    if (_trailPoints.isEmpty ||
+        currentPoint.distanceTo(_trailPoints.last.position) >= 20) {
+      _trailPoints.add(_TrailPoint(position: currentPoint.clone()));
+    }
     if (_lastDragPoint != null) {
       _checkSwipeLine(_lastDragPoint!, currentPoint);
     }
