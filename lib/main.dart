@@ -284,7 +284,7 @@ class _GamePageState extends State<GamePage> {
                 children: [
                   Container(
                     width: 280,
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xF0101020),
                       border: Border.all(
@@ -627,12 +627,12 @@ class _GamePageState extends State<GamePage> {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 6),
                   // Volume control
                   Container(
                     padding: const EdgeInsets.symmetric(
-                      vertical: 12,
-                      horizontal: 8,
+                      vertical: 6,
+                      horizontal: 4,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xF0101020),
@@ -734,12 +734,12 @@ class _GamePageState extends State<GamePage> {
                               final isActive = level <= _volume;
                               return Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  vertical: 4,
+                                  vertical: 6,
                                   horizontal: 6,
                                 ),
                                 child: Container(
-                                  width: 38,
-                                  height: 18,
+                                  width: 24,
+                                  height: 22,
                                   decoration: BoxDecoration(
                                     color:
                                         isActive
