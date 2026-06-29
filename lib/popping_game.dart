@@ -41,18 +41,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   static const double _gameOverLightningDuration = 2.0; // seconds
   List<List<Offset>> _gameOverBolts = [];
 
-  // Reusable paint objects for trail rendering
-  final Paint _trailGlowPaint =
-      Paint()
-        ..strokeWidth = 4.0
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-  final Paint _trailCorePaint =
-      Paint()
-        ..strokeWidth = 1.5
-        ..strokeCap = StrokeCap.round
-        ..style = PaintingStyle.stroke;
-
   // Reusable paint objects for game-over lightning
   final Paint _boltGlowPaint =
       Paint()
@@ -167,15 +155,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       }
     }
 
-    // Draw swipe trail as lightning bolt
+    // Draw swipe trail as sword slash effect
     if (_trailPoints.length >= 2) {
-      final glowPaint = _trailGlowPaint;
-      final corePaint = _trailCorePaint;
+      // Build a tapered path — thick at the newest point, thin at the oldest
+      final slashPath = Path();
+      final glowPath = Path();
 
       for (int i = 1; i < _trailPoints.length; i++) {
         final prev = _trailPoints[i - 1];
         final curr = _trailPoints[i];
-        final opacity = (1.0 - curr.age / _trailFadeDuration).clamp(0.0, 1.0);
 
         final dx = curr.position.x - prev.position.x;
         final dy = curr.position.y - prev.position.y;
@@ -185,23 +173,62 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         final invLen = 1.0 / len;
         final nx = -dy * invLen;
         final ny = dx * invLen;
-        final jagAmount =
-            (i % 2 == 0 ? 1 : -1) * (5.0 + (i * 7 % 5).toDouble());
-        final midX = (prev.position.x + curr.position.x) * 0.5 + nx * jagAmount;
-        final midY = (prev.position.y + curr.position.y) * 0.5 + ny * jagAmount;
 
-        final path =
-            Path()
-              ..moveTo(prev.position.x, prev.position.y)
-              ..lineTo(midX, midY)
-              ..lineTo(curr.position.x, curr.position.y);
+        // Taper: thin at newest (head/finger), thick at oldest (tail)
+        final progress = i / _trailPoints.length;
+        final taper = (1.0 - progress) * (1.0 - progress); // sharp at head
+        final thickness = taper * 6.0;
+        final glowThickness = taper * 14.0;
 
-        glowPaint.color = Color.fromRGBO(100, 255, 220, opacity * 0.6);
-        canvas.drawPath(path, glowPaint);
+        final p1x = prev.position.x + nx * thickness;
+        final p1y = prev.position.y + ny * thickness;
+        final p2x = prev.position.x - nx * thickness;
+        final p2y = prev.position.y - ny * thickness;
+        final p3x = curr.position.x - nx * thickness;
+        final p3y = curr.position.y - ny * thickness;
+        final p4x = curr.position.x + nx * thickness;
+        final p4y = curr.position.y + ny * thickness;
 
-        corePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.95);
-        canvas.drawPath(path, corePaint);
+        slashPath.moveTo(p1x, p1y);
+        slashPath.lineTo(p4x, p4y);
+        slashPath.lineTo(p3x, p3y);
+        slashPath.lineTo(p2x, p2y);
+        slashPath.close();
+
+        final g1x = prev.position.x + nx * glowThickness;
+        final g1y = prev.position.y + ny * glowThickness;
+        final g2x = prev.position.x - nx * glowThickness;
+        final g2y = prev.position.y - ny * glowThickness;
+        final g3x = curr.position.x - nx * glowThickness;
+        final g3y = curr.position.y - ny * glowThickness;
+        final g4x = curr.position.x + nx * glowThickness;
+        final g4y = curr.position.y + ny * glowThickness;
+
+        glowPath.moveTo(g1x, g1y);
+        glowPath.lineTo(g4x, g4y);
+        glowPath.lineTo(g3x, g3y);
+        glowPath.lineTo(g2x, g2y);
+        glowPath.close();
       }
+
+      // Overall opacity based on age of newest point
+      final newestAge = _trailPoints.last.age;
+      final opacity = (1.0 - newestAge / _trailFadeDuration).clamp(0.0, 1.0);
+
+      // Draw glow (outer)
+      final glowPaint =
+          Paint()
+            ..color = Color.fromRGBO(200, 240, 255, opacity * 0.3)
+            ..style = PaintingStyle.fill
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawPath(glowPath, glowPaint);
+
+      // Draw core slash (inner)
+      final slashPaint =
+          Paint()
+            ..color = Color.fromRGBO(255, 255, 255, opacity * 0.9)
+            ..style = PaintingStyle.fill;
+      canvas.drawPath(slashPath, slashPaint);
     }
   }
 
