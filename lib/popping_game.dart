@@ -258,6 +258,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> onLoad() async {
     // Add screen boundary so bubbles can collide with edges
     add(ScreenHitbox());
+    // Initialize BGM handler
+    FlameAudio.bgm.initialize();
   }
 
   @override
@@ -513,7 +515,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _bgmActive = true;
     try {
       FlameAudio.bgm.play('bgm.mp3', volume: volume * 0.3);
-    } catch (_) {}
+    } catch (e) {
+      // Fallback: try loop
+      try {
+        FlameAudio.loopLongAudio('bgm.mp3', volume: volume * 0.3);
+      } catch (_) {}
+    }
   }
 
   void _stopBgm() {
