@@ -5,7 +5,6 @@ import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'bubble_text_widget.dart';
-import 'dancing_bubbles_widget.dart';
 
 import 'popping_game.dart';
 
@@ -234,8 +233,6 @@ class _GamePageState extends State<GamePage> {
                       fontSize: 42,
                       color: Color(0xFFFFDD00),
                     ),
-                    const SizedBox(height: 12),
-                    const DancingBubblesWidget(width: 220, height: 40),
                     const SizedBox(height: 24),
                   ],
                   GestureDetector(
