@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 
 import 'bubble_text_widget.dart';
+import 'fireworks_widget.dart';
 
 import 'popping_game.dart';
 
@@ -221,6 +222,13 @@ class _GamePageState extends State<GamePage> {
               ],
             ),
           ),
+          // Fireworks for adventure complete
+          if (_waitingToStart && _isGameOver && _selectedMode == 2)
+            const Positioned.fill(
+              child: IgnorePointer(
+                child: FireworksWidget(duration: Duration(seconds: 2)),
+              ),
+            ),
           // "Start Game" waiting screen
           if (_waitingToStart)
             Center(
