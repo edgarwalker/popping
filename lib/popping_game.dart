@@ -375,8 +375,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     HapticFeedback.heavyImpact();
     _playCrash();
     if (_mode == 1 || _mode == 2) {
-      // Score/Adventure mode: -1 per bubble popped by collision, no game reset
-      _score -= 1;
+      // Score/Adventure mode: -2 per collision (both bubbles lost)
+      _score -= 2;
       onScoreUpdate?.call(_score);
       if (_mode == 2) {
         _updateAdventureLevel();
