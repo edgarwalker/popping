@@ -47,7 +47,17 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   bool _gameOverTriggered = false;
   bool get isGameOver => _gameOverTriggered;
 
-  // Audio - lazy loaded
+  // Background music tracks — randomly picked each game
+  static const List<String> _bgmTracks = [
+    'bgm.mp3',
+    'bgm2.mp3',
+    'bgm3.mp3',
+    'bgm4.mp3',
+    'bgm5.mp3',
+    'bgm6.mp3',
+    'bgm7.mp3',
+  ];
+  String _currentBgmTrack = '';
   bool _audioReady = false;
   bool _bgmActive = false;
   AudioPool? _popPool;
@@ -493,6 +503,14 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Resume Flame engine
     paused = false;
     // Lazy init audio on first start
+    // Pick a random track different from the last one
+    String newTrack;
+    do {
+      newTrack = _bgmTracks[_random.nextInt(_bgmTracks.length)];
+    } while (newTrack == _currentBgmTrack && _bgmTracks.length > 1);
+    _currentBgmTrack = newTrack;
+    debugPrint('BGM selected: $_currentBgmTrack');
+
     if (!_audioReady) {
       _initAudio();
     } else {
@@ -514,11 +532,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     if (volume <= 0) return;
     _bgmActive = true;
     try {
-      FlameAudio.bgm.play('bgm.mp3', volume: volume * 0.3);
+      FlameAudio.bgm.play(_currentBgmTrack, volume: volume * 0.3);
     } catch (e) {
-      // Fallback: try loop
       try {
-        FlameAudio.loopLongAudio('bgm.mp3', volume: volume * 0.3);
+        FlameAudio.loopLongAudio(_currentBgmTrack, volume: volume * 0.3);
       } catch (_) {}
     }
   }
@@ -547,9 +564,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       if (volume <= 0) {
         FlameAudio.bgm.stop();
       } else {
-        // If not playing, start it
         if (!FlameAudio.bgm.isPlaying) {
-          FlameAudio.bgm.play('bgm.mp3', volume: volume * 0.3);
+          FlameAudio.bgm.play(_currentBgmTrack, volume: volume * 0.3);
         }
       }
     } catch (_) {}
