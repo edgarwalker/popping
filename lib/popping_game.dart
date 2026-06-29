@@ -15,19 +15,41 @@ import 'level_config.dart';
 class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   final Random _random = Random();
 
+  @override
+  set paused(bool value) {
+    super.paused = value;
+    if (!_bgmActive) return;
+    if (value) {
+      _pauseBgm();
+    } else if (!_gameOverTriggered && !_adventureComplete) {
+      _resumeBgm();
+    }
+  }
+
   double _spawnTimer = 0.0;
   double elapsedTime = 0.0; // total game time in seconds
   int _score = 0;
   int _currentLevel = 0; // index into levels list (0–6)
   int _mode = 0; // 0: Level, 1: Score, 2: Adventure
   int adventureTarget = 10; // target score for adventure mode
-  double volume = 4.0 / 7.0; // 0.0 to 1.0
+  double _volume = 4.0 / 7.0; // 0.0 to 1.0
+
+  double get volume => _volume;
+  set volume(double v) {
+    _volume = v;
+    // Only update BGM if game is actively playing
+    if (_audioReady && !_gameOverTriggered && !_adventureComplete) {
+      _updateBgmVolume();
+    }
+  }
+
   bool _adventureComplete = false;
   bool _gameOverTriggered = false;
   bool get isGameOver => _gameOverTriggered;
 
   // Audio - lazy loaded
   bool _audioReady = false;
+  bool _bgmActive = false;
   AudioPool? _popPool;
   AudioPool? _crashPool;
 
@@ -370,6 +392,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _adventureComplete = true;
     _paused = true;
     _pauseTimer = 0.0;
+    _stopBgm();
     for (final bubble in children.whereType<Bubble>().toList()) {
       if (!bubble.isPopping) {
         bubble.popSilent();
@@ -416,6 +439,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         _gameOverTriggered = true;
         _score = 0;
         onScoreUpdate?.call(_score);
+
+        // Stop background music
+        _stopBgm();
 
         // Trigger lightning bolt effect immediately
         _startGameOverLightning();
@@ -465,7 +491,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Resume Flame engine
     paused = false;
     // Lazy init audio on first start
-    if (!_audioReady) _initAudio();
+    if (!_audioReady) {
+      _initAudio();
+    } else {
+      _startBgm();
+    }
     _spawnBubble();
   }
 
@@ -474,6 +504,47 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     try {
       _popPool = await FlameAudio.createPool('pop.wav', maxPlayers: 3);
       _crashPool = await FlameAudio.createPool('crash.wav', maxPlayers: 2);
+    } catch (_) {}
+    _startBgm();
+  }
+
+  void _startBgm() {
+    if (volume <= 0) return;
+    _bgmActive = true;
+    try {
+      FlameAudio.bgm.play('bgm.mp3', volume: volume * 0.3);
+    } catch (_) {}
+  }
+
+  void _stopBgm() {
+    _bgmActive = false;
+    try {
+      FlameAudio.bgm.stop();
+    } catch (_) {}
+  }
+
+  void _pauseBgm() {
+    try {
+      FlameAudio.bgm.pause();
+    } catch (_) {}
+  }
+
+  void _resumeBgm() {
+    try {
+      FlameAudio.bgm.resume();
+    } catch (_) {}
+  }
+
+  void _updateBgmVolume() {
+    try {
+      if (volume <= 0) {
+        FlameAudio.bgm.stop();
+      } else {
+        // If not playing, start it
+        if (!FlameAudio.bgm.isPlaying) {
+          FlameAudio.bgm.play('bgm.mp3', volume: volume * 0.3);
+        }
+      }
     } catch (_) {}
   }
 
@@ -542,6 +613,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   /// Clear all game state without starting (for waiting screen).
   void clearState() {
+    _stopBgm();
     _paused = true;
     _pauseTimer = 0.0;
     _spawnTimer = 0.0;
