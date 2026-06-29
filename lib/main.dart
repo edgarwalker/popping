@@ -146,82 +146,80 @@ class _GamePageState extends State<GamePage> {
           // Top row: score left, gear right
           SafeArea(
             bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 7),
-              child: Row(
-                children: [
-                  const SizedBox(width: 7),
-                  // Left side content
-                  if (_selectedMode == 0)
-                    Text(
-                      'Level ${_selectedLevel + 1}',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  if (_selectedMode == 1)
-                    Text(
-                      'Score: $_score',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  if (_selectedMode == 2)
-                    Text(
-                      'Score: $_score / $_adventureTarget',
-                      style: const TextStyle(
-                        color: CupertinoColors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        decoration: TextDecoration.none,
-                      ),
-                    ),
-                  const Spacer(),
-                  // Center: time for adventure mode
-                  if (_selectedMode == 2)
-                    Builder(
-                      builder: (context) {
-                        final total = _game.elapsedTime.toInt();
-                        final h = total ~/ 3600;
-                        final m = (total % 3600) ~/ 60;
-                        final s = total % 60;
-                        String timeStr;
-                        if (h > 0) {
-                          timeStr = '${h}h ${m}m ${s}s';
-                        } else if (m > 0) {
-                          timeStr = '${m}m ${s}s';
-                        } else {
-                          timeStr = '${s}s';
-                        }
-                        return Text(
-                          'Time: $timeStr',
-                          style: const TextStyle(
-                            color: CupertinoColors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        );
-                      },
-                    ),
-                  if (_selectedMode == 2) const Spacer(),
-                  GestureDetector(
-                    onTap: _showSettingsPanel,
-                    child: const Icon(
-                      CupertinoIcons.gear,
+            child: Row(
+              children: [
+                const SizedBox(width: 7),
+                // Left side content
+                if (_selectedMode == 0)
+                  Text(
+                    'Level ${_selectedLevel + 1}',
+                    style: const TextStyle(
                       color: CupertinoColors.white,
-                      size: 26,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
                     ),
                   ),
-                  const SizedBox(width: 7),
-                ],
-              ),
+                if (_selectedMode == 1)
+                  Text(
+                    'Score: $_score',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                if (_selectedMode == 2)
+                  Text(
+                    'Score: $_score / $_adventureTarget',
+                    style: const TextStyle(
+                      color: CupertinoColors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      decoration: TextDecoration.none,
+                    ),
+                  ),
+                const Spacer(),
+                // Center: time for adventure mode
+                if (_selectedMode == 2)
+                  Builder(
+                    builder: (context) {
+                      final total = _game.elapsedTime.toInt();
+                      final h = total ~/ 3600;
+                      final m = (total % 3600) ~/ 60;
+                      final s = total % 60;
+                      String timeStr;
+                      if (h > 0) {
+                        timeStr = '${h}h ${m}m ${s}s';
+                      } else if (m > 0) {
+                        timeStr = '${m}m ${s}s';
+                      } else {
+                        timeStr = '${s}s';
+                      }
+                      return Text(
+                        'Time: $timeStr',
+                        style: const TextStyle(
+                          color: CupertinoColors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.none,
+                        ),
+                      );
+                    },
+                  ),
+                if (_selectedMode == 2) const Spacer(),
+                CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: const Size(44, 44),
+                  onPressed: _showSettingsPanel,
+                  child: const Icon(
+                    CupertinoIcons.gear,
+                    color: CupertinoColors.white,
+                    size: 26,
+                  ),
+                ),
+              ],
             ),
           ),
           // "Start Game" waiting screen
