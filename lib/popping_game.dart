@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter_soloud/flutter_soloud.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 
@@ -18,9 +19,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   @override
   set paused(bool value) {
     super.paused = value;
-    if (!_bgmActive) return;
     if (value) {
-      _pauseBgm();
+      if (_bgmActive) _pauseBgm();
     } else if (!_gameOverTriggered && !_adventureComplete) {
       _resumeBgm();
     }
@@ -37,8 +37,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   double get volume => _volume;
   set volume(double v) {
     _volume = v;
-    // Only update BGM if game is actively playing
-    if (_audioReady && !_gameOverTriggered && !_adventureComplete) {
+    if (_audioReady) {
       _updateBgmVolume();
     }
   }
@@ -60,8 +59,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   String _currentBgmTrack = '';
   bool _audioReady = false;
   bool _bgmActive = false;
-  AudioPool? _popPool;
-  AudioPool? _crashPool;
+  AudioSource? _popSource;
+  AudioSource? _crashSource;
+  AudioSource? _fireworksSource;
 
   bool _paused = false;
   double _pauseTimer = 0.0;
@@ -413,6 +413,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _paused = true;
     _pauseTimer = 0.0;
     _stopBgm();
+    _playFireworks();
     for (final bubble in children.whereType<Bubble>().toList()) {
       if (!bubble.isPopping) {
         bubble.popSilent();
@@ -531,8 +532,13 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   Future<void> _initAudio() async {
     _audioReady = true;
     try {
-      _popPool = await FlameAudio.createPool('pop.wav', maxPlayers: 3);
-      _crashPool = await FlameAudio.createPool('crash.wav', maxPlayers: 2);
+      final soloud = SoLoud.instance;
+      if (!soloud.isInitialized) {
+        await soloud.init();
+      }
+      _popSource = await soloud.loadAsset('assets/audio/pop.wav');
+      _crashSource = await soloud.loadAsset('assets/audio/crash.wav');
+      _fireworksSource = await soloud.loadAsset('assets/audio/fireworks.wav');
     } catch (_) {}
     _startBgm();
   }
@@ -563,8 +569,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void _resumeBgm() {
+    if (volume <= 0) return;
     try {
-      FlameAudio.bgm.resume();
+      if (_bgmActive) {
+        FlameAudio.bgm.resume();
+      } else if (!_gameOverTriggered && !_adventureComplete) {
+        // Was stopped (e.g. muted then unmuted) — restart
+        _bgmActive = true;
+        FlameAudio.bgm.play(_currentBgmTrack, volume: volume * 0.3);
+      }
     } catch (_) {}
   }
 
@@ -572,25 +585,33 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     try {
       if (volume <= 0) {
         FlameAudio.bgm.stop();
-      } else {
-        if (!FlameAudio.bgm.isPlaying) {
-          FlameAudio.bgm.play(_currentBgmTrack, volume: volume * 0.3);
-        }
+        _bgmActive = false;
+      } else if (_bgmActive) {
+        // Already playing — just update volume
+        FlameAudio.bgm.audioPlayer.setVolume(volume * 0.3);
       }
+      // If not active (was muted), _resumeBgm will handle restart on unpause
     } catch (_) {}
   }
 
   void _playPop() {
-    if (volume <= 0) return;
+    if (volume <= 0 || _popSource == null) return;
     try {
-      _popPool?.start(volume: volume * 0.5);
+      SoLoud.instance.play(_popSource!, volume: volume);
     } catch (_) {}
   }
 
   void _playCrash() {
-    if (volume <= 0) return;
+    if (volume <= 0 || _crashSource == null) return;
     try {
-      _crashPool?.start(volume: volume * 0.7);
+      SoLoud.instance.play(_crashSource!, volume: volume);
+    } catch (_) {}
+  }
+
+  void _playFireworks() {
+    if (volume <= 0 || _fireworksSource == null) return;
+    try {
+      SoLoud.instance.play(_fireworksSource!, volume: volume * 0.8);
     } catch (_) {}
   }
 
