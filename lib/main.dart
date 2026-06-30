@@ -155,7 +155,7 @@ class _GamePageState extends State<GamePage> {
                     'Level ${_selectedLevel + 1}',
                     style: const TextStyle(
                       color: CupertinoColors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.none,
                     ),
@@ -165,7 +165,7 @@ class _GamePageState extends State<GamePage> {
                     'Score: $_score',
                     style: const TextStyle(
                       color: CupertinoColors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.none,
                     ),
@@ -175,7 +175,7 @@ class _GamePageState extends State<GamePage> {
                     'Score: $_score / $_adventureTarget',
                     style: const TextStyle(
                       color: CupertinoColors.white,
-                      fontSize: 18,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                       decoration: TextDecoration.none,
                     ),
@@ -201,7 +201,7 @@ class _GamePageState extends State<GamePage> {
                         'Time: $timeStr',
                         style: const TextStyle(
                           color: CupertinoColors.white,
-                          fontSize: 16,
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
                           decoration: TextDecoration.none,
                         ),
@@ -210,8 +210,8 @@ class _GamePageState extends State<GamePage> {
                   ),
                 if (_selectedMode == 2) const Spacer(),
                 CupertinoButton(
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(44, 44),
+                  padding: const EdgeInsets.all(12),
+                  minimumSize: const Size(48, 48),
                   onPressed: _showSettingsPanel,
                   child: const Icon(
                     CupertinoIcons.gear,
@@ -289,7 +289,9 @@ class _GamePageState extends State<GamePage> {
                 children: [
                   Container(
                     width: 280,
-                    padding: const EdgeInsets.all(10),
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.8,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xF0101020),
                       border: Border.all(
@@ -298,338 +300,368 @@ class _GamePageState extends State<GamePage> {
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Mode',
-                          style: const TextStyle(
-                            color: CupertinoColors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            decoration: TextDecoration.none,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: List.generate(_modes.length, (index) {
-                            final isSelected = index == _selectedMode;
-                            return GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  _selectedMode = index;
-                                  if (_selectedMode == 1 ||
-                                      _selectedMode == 2) {
-                                    _selectedLevel = 0;
-                                    _game.setLevel(6);
-                                  } else {
-                                    _game.setLevel(_selectedLevel);
-                                  }
-                                  _game.setMode(_selectedMode);
-                                  _waitingToStart = true;
-                                  _isGameOver = false;
-                                  _score = 0;
-                                  _game.clearState();
-                                  _game.paused = false;
-                                  WidgetsBinding.instance.addPostFrameCallback((
-                                    _,
-                                  ) {
-                                    _game.paused = true;
-                                  });
-                                });
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 5,
+                    child: RawScrollbar(
+                      thumbVisibility: true,
+                      thickness: 4,
+                      radius: const Radius.circular(2),
+                      padding: const EdgeInsets.only(right: 2),
+                      thumbColor: CupertinoColors.white.withValues(alpha: 0.5),
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mode',
+                                style: const TextStyle(
+                                  color: CupertinoColors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.none,
                                 ),
-                                decoration: BoxDecoration(
-                                  color:
-                                      isSelected
-                                          ? CupertinoColors.activeBlue
-                                          : const Color(0x00000000),
-                                  border: Border.all(
-                                    color:
-                                        isSelected
-                                            ? CupertinoColors.activeBlue
-                                            : CupertinoColors.white.withValues(
-                                              alpha: 0.6,
+                              ),
+                              const SizedBox(height: 8),
+                              Wrap(
+                                spacing: 12,
+                                runSpacing: 12,
+                                children: List.generate(_modes.length, (index) {
+                                  final isSelected = index == _selectedMode;
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _selectedMode = index;
+                                        if (_selectedMode == 1 ||
+                                            _selectedMode == 2) {
+                                          _selectedLevel = 0;
+                                          _game.setLevel(6);
+                                        } else {
+                                          _game.setLevel(_selectedLevel);
+                                        }
+                                        _game.setMode(_selectedMode);
+                                        _waitingToStart = true;
+                                        _isGameOver = false;
+                                        _score = 0;
+                                        _game.clearState();
+                                        _game.paused = false;
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) {
+                                              _game.paused = true;
+                                            });
+                                      });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            isSelected
+                                                ? CupertinoColors.activeBlue
+                                                : const Color(0x00000000),
+                                        border: Border.all(
+                                          color:
+                                              isSelected
+                                                  ? CupertinoColors.activeBlue
+                                                  : CupertinoColors.white
+                                                      .withValues(alpha: 0.6),
+                                        ),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        _modes[index],
+                                        style: TextStyle(
+                                          color:
+                                              isSelected
+                                                  ? CupertinoColors.white
+                                                  : CupertinoColors.white
+                                                      .withValues(alpha: 0.7),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ),
+                              const SizedBox(height: 22),
+                              Opacity(
+                                opacity: _selectedMode == 0 ? 1.0 : 0.4,
+                                child: IgnorePointer(
+                                  ignoring: _selectedMode != 0,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Level',
+                                        style: TextStyle(
+                                          color:
+                                              _selectedMode == 0
+                                                  ? CupertinoColors.white
+                                                  : CupertinoColors.systemGrey,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Wrap(
+                                        spacing: 12,
+                                        runSpacing: 12,
+                                        children: List.generate(7, (index) {
+                                          final isSelected =
+                                              index == _selectedLevel;
+                                          return GestureDetector(
+                                            onTap: () {
+                                              if (index != _selectedLevel) {
+                                                setState(() {
+                                                  _selectedLevel = index;
+                                                  _waitingToStart = true;
+                                                  _isGameOver = false;
+                                                  _score = 0;
+                                                });
+                                                _game.setLevel(index);
+                                                _game.clearState();
+                                                _game.paused = false;
+                                                WidgetsBinding.instance
+                                                    .addPostFrameCallback((_) {
+                                                      _game.paused = true;
+                                                    });
+                                              }
+                                            },
+                                            child: Container(
+                                              width: 40,
+                                              height: 40,
+                                              alignment: Alignment.center,
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    isSelected
+                                                        ? CupertinoColors
+                                                            .activeBlue
+                                                        : const Color(
+                                                          0x00000000,
+                                                        ),
+                                                border: Border.all(
+                                                  color:
+                                                      isSelected
+                                                          ? CupertinoColors
+                                                              .activeBlue
+                                                          : CupertinoColors
+                                                              .white
+                                                              .withValues(
+                                                                alpha: 0.6,
+                                                              ),
+                                                ),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                '${index + 1}',
+                                                style: TextStyle(
+                                                  color:
+                                                      isSelected
+                                                          ? CupertinoColors
+                                                              .white
+                                                          : CupertinoColors
+                                                              .white
+                                                              .withValues(
+                                                                alpha: 0.7,
+                                                              ),
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  decoration:
+                                                      TextDecoration.none,
+                                                ),
+                                              ),
                                             ),
-                                  ),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  _modes[index],
-                                  style: TextStyle(
-                                    color:
-                                        isSelected
-                                            ? CupertinoColors.white
-                                            : CupertinoColors.white.withValues(
-                                              alpha: 0.7,
-                                            ),
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    decoration: TextDecoration.none,
+                                          );
+                                        }),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                            );
-                          }),
-                        ),
-                        const SizedBox(height: 14),
-                        Opacity(
-                          opacity: _selectedMode == 0 ? 1.0 : 0.4,
-                          child: IgnorePointer(
-                            ignoring: _selectedMode != 0,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Level',
+                              if (_selectedMode == 2) ...[
+                                const SizedBox(height: 22),
+                                const Text(
+                                  'Target',
                                   style: TextStyle(
-                                    color:
-                                        _selectedMode == 0
-                                            ? CupertinoColors.white
-                                            : CupertinoColors.systemGrey,
+                                    color: CupertinoColors.white,
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     decoration: TextDecoration.none,
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: List.generate(7, (index) {
-                                    final isSelected = index == _selectedLevel;
-                                    return GestureDetector(
+                                const SizedBox(height: 10),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    GestureDetector(
                                       onTap: () {
-                                        if (index != _selectedLevel) {
-                                          setState(() {
-                                            _selectedLevel = index;
-                                            _waitingToStart = true;
-                                            _isGameOver = false;
-                                            _score = 0;
-                                          });
-                                          _game.setLevel(index);
-                                          _game.clearState();
-                                          _game.paused = false;
-                                          WidgetsBinding.instance
-                                              .addPostFrameCallback((_) {
-                                                _game.paused = true;
-                                              });
-                                        }
+                                        setState(() {
+                                          _setAdventureTarget(
+                                            _adventureTarget - 10,
+                                          );
+                                        });
                                       },
-                                      child: Container(
-                                        width: 34,
-                                        height: 34,
-                                        alignment: Alignment.center,
-                                        decoration: BoxDecoration(
-                                          color:
-                                              isSelected
-                                                  ? CupertinoColors.activeBlue
-                                                  : const Color(0x00000000),
-                                          border: Border.all(
-                                            color:
-                                                isSelected
-                                                    ? CupertinoColors.activeBlue
-                                                    : CupertinoColors.white
-                                                        .withValues(alpha: 0.6),
-                                          ),
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '${index + 1}',
-                                          style: TextStyle(
-                                            color:
-                                                isSelected
-                                                    ? CupertinoColors.white
-                                                    : CupertinoColors.white
-                                                        .withValues(alpha: 0.7),
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            decoration: TextDecoration.none,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (_selectedMode == 2) ...[
-                          const SizedBox(height: 14),
-                          const Text(
-                            'Target',
-                            style: TextStyle(
-                              color: CupertinoColors.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              decoration: TextDecoration.none,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _setAdventureTarget(_adventureTarget - 10);
-                                  });
-                                },
-                                onLongPressStart: (_) {
-                                  _holdTimer = Timer.periodic(
-                                    const Duration(milliseconds: 100),
-                                    (_) {
-                                      setState(() {
-                                        _setAdventureTarget(
-                                          _adventureTarget - 10,
+                                      onLongPressStart: (_) {
+                                        _holdTimer = Timer.periodic(
+                                          const Duration(milliseconds: 100),
+                                          (_) {
+                                            setState(() {
+                                              _setAdventureTarget(
+                                                _adventureTarget - 10,
+                                              );
+                                            });
+                                          },
                                         );
-                                      });
-                                    },
-                                  );
-                                },
-                                onLongPressEnd: (_) {
-                                  _holdTimer?.cancel();
-                                  _holdTimer = null;
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(
-                                    CupertinoIcons.minus_circle,
-                                    color: CupertinoColors.white,
-                                    size: 28,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: CupertinoTextField(
-                                  controller: _targetController,
-                                  keyboardType: TextInputType.number,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: CupertinoColors.white,
-                                    fontSize: 15,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: CupertinoColors.white.withValues(
-                                        alpha: 0.4,
+                                      },
+                                      onLongPressEnd: (_) {
+                                        _holdTimer?.cancel();
+                                        _holdTimer = null;
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                          CupertinoIcons.minus_circle,
+                                          color: CupertinoColors.white,
+                                          size: 34,
+                                        ),
                                       ),
                                     ),
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  onChanged: (value) {
-                                    final parsed = int.tryParse(value);
-                                    if (parsed != null) {
-                                      if (parsed < 10) {
-                                        _adventureTarget = 10;
-                                        _targetController.text = '10';
-                                        _targetController.selection =
-                                            TextSelection.fromPosition(
-                                              TextPosition(
-                                                offset:
-                                                    _targetController
-                                                        .text
-                                                        .length,
-                                              ),
-                                            );
-                                      } else {
-                                        _adventureTarget = parsed.clamp(
-                                          10,
-                                          10000000000,
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: CupertinoTextField(
+                                        controller: _targetController,
+                                        keyboardType: TextInputType.number,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          color: CupertinoColors.white,
+                                          fontSize: 18,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: CupertinoColors.white
+                                                .withValues(alpha: 0.4),
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        onChanged: (value) {
+                                          final parsed = int.tryParse(value);
+                                          if (parsed != null) {
+                                            if (parsed < 10) {
+                                              _adventureTarget = 10;
+                                              _targetController.text = '10';
+                                              _targetController.selection =
+                                                  TextSelection.fromPosition(
+                                                    TextPosition(
+                                                      offset:
+                                                          _targetController
+                                                              .text
+                                                              .length,
+                                                    ),
+                                                  );
+                                            } else {
+                                              _adventureTarget = parsed.clamp(
+                                                10,
+                                                10000000000,
+                                              );
+                                            }
+                                            _game.adventureTarget =
+                                                _adventureTarget;
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          _setAdventureTarget(
+                                            _adventureTarget + 10,
+                                          );
+                                        });
+                                      },
+                                      onLongPressStart: (_) {
+                                        _holdTimer = Timer.periodic(
+                                          const Duration(milliseconds: 100),
+                                          (_) {
+                                            setState(() {
+                                              _setAdventureTarget(
+                                                _adventureTarget + 10,
+                                              );
+                                            });
+                                          },
                                         );
-                                      }
-                                      _game.adventureTarget = _adventureTarget;
-                                    }
-                                  },
+                                      },
+                                      onLongPressEnd: (_) {
+                                        _holdTimer?.cancel();
+                                        _holdTimer = null;
+                                      },
+                                      child: const Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: Icon(
+                                          CupertinoIcons.plus_circle,
+                                          color: CupertinoColors.white,
+                                          size: 34,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                              const SizedBox(width: 10),
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _setAdventureTarget(_adventureTarget + 10);
-                                  });
-                                },
-                                onLongPressStart: (_) {
-                                  _holdTimer = Timer.periodic(
-                                    const Duration(milliseconds: 100),
-                                    (_) {
-                                      setState(() {
-                                        _setAdventureTarget(
-                                          _adventureTarget + 10,
-                                        );
-                                      });
-                                    },
-                                  );
-                                },
-                                onLongPressEnd: (_) {
-                                  _holdTimer?.cancel();
-                                  _holdTimer = null;
-                                },
-                                child: const Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: Icon(
-                                    CupertinoIcons.plus_circle,
-                                    color: CupertinoColors.white,
-                                    size: 28,
+                              ],
+                              const SizedBox(height: 20),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    _game.clearState();
+                                    // Unpause briefly to render cleared state
+                                    _game.paused = false;
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) {
+                                          _game.paused = true;
+                                        });
+                                    setState(() {
+                                      _waitingToStart = true;
+                                      _isGameOver = false;
+                                      _score = 0;
+                                    });
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: CupertinoColors.white.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                      ),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Text(
+                                      'Reset Game',
+                                      style: TextStyle(
+                                        color: CupertinoColors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                        const SizedBox(height: 20),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: GestureDetector(
-                            onTap: () {
-                              _game.clearState();
-                              // Unpause briefly to render cleared state
-                              _game.paused = false;
-                              WidgetsBinding.instance.addPostFrameCallback((_) {
-                                _game.paused = true;
-                              });
-                              setState(() {
-                                _waitingToStart = true;
-                                _isGameOver = false;
-                                _score = 0;
-                              });
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                border: Border.all(
-                                  color: CupertinoColors.white.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Text(
-                                'Reset Game',
-                                style: TextStyle(
-                                  color: CupertinoColors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  decoration: TextDecoration.none,
-                                ),
-                              ),
-                            ),
-                          ),
                         ),
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(width: 6),
@@ -711,6 +743,7 @@ class _GamePageState extends State<GamePage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           GestureDetector(
+                            behavior: HitTestBehavior.opaque,
                             onTap: () {
                               setState(() {
                                 if (_volume == 0) {
@@ -722,12 +755,15 @@ class _GamePageState extends State<GamePage> {
                                 _game.volume = _volume / 7.0;
                               });
                             },
-                            child: Icon(
-                              _volume == 0
-                                  ? CupertinoIcons.speaker_slash_fill
-                                  : CupertinoIcons.speaker_2_fill,
-                              color: CupertinoColors.white,
-                              size: 22,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Icon(
+                                _volume == 0
+                                    ? CupertinoIcons.speaker_slash_fill
+                                    : CupertinoIcons.speaker_2_fill,
+                                color: CupertinoColors.white,
+                                size: 22,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -744,7 +780,7 @@ class _GamePageState extends State<GamePage> {
                                 ),
                                 child: Container(
                                   width: 24,
-                                  height: 22,
+                                  height: 28,
                                   decoration: BoxDecoration(
                                     color:
                                         isActive
