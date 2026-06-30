@@ -3,13 +3,17 @@ import 'dart:ui';
 
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'ad_manager.dart';
 import 'bubble_text_widget.dart';
 import 'fireworks_widget.dart';
 
 import 'popping_game.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AdManager.instance.initialize();
   runApp(const MyApp());
 }
 
@@ -33,7 +37,7 @@ class GamePage extends StatefulWidget {
   State<GamePage> createState() => _GamePageState();
 }
 
-class _GamePageState extends State<GamePage> {
+class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   final PoppingGame _game = PoppingGame();
   int _selectedLevel = 0;
   int _selectedMode = 0; // 0: Level, 1: Score, 2: Adventure
@@ -44,6 +48,7 @@ class _GamePageState extends State<GamePage> {
   int _adventureTarget = 10;
   int _volume = 4; // 0-7, app volume level
   int _volumeBeforeMute = 4; // remember volume before mute
+  bool _bannerAdLoaded = false;
   final GlobalKey _volumeKey = GlobalKey();
   final GlobalKey _volumeBarsKey = GlobalKey();
   Timer? _holdTimer;
@@ -71,6 +76,8 @@ class _GamePageState extends State<GamePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _loadBannerAd();
     _targetController = TextEditingController(
       text: _adventureTarget.toString(),
     );
@@ -93,6 +100,10 @@ class _GamePageState extends State<GamePage> {
           _score = 0;
         }
       });
+      // Show interstitial ad based on mode
+      if (_selectedMode == 0) {
+        AdManager.instance.onLevelGameOver();
+      }
       // Don't pause the engine — let animations keep running
       // Game logic is already stopped via _gameOverTriggered
     };
@@ -121,6 +132,17 @@ class _GamePageState extends State<GamePage> {
   }
 
   void _startGame() {
+    if (_selectedMode == 1 || _selectedMode == 2) {
+      // Show interstitial first, start game only after ad is dismissed
+      AdManager.instance.onScoreOrAdventureStart(
+        onDismissed: () => _doStartGame(),
+      );
+    } else {
+      _doStartGame();
+    }
+  }
+
+  void _doStartGame() {
     setState(() {
       _waitingToStart = false;
       _isGameOver = false;
@@ -132,6 +154,38 @@ class _GamePageState extends State<GamePage> {
     _timeDisplayTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+  }
+
+  void _loadBannerAd() {
+    AdManager.instance.createBannerAd(
+      onLoaded: () {
+        if (mounted) setState(() => _bannerAdLoaded = true);
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    AdManager.instance.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Score/Adventure: pause game, show ad, resume after ad closed
+      if ((_selectedMode == 1 || _selectedMode == 2) && !_waitingToStart) {
+        _game.paused = true;
+        AdManager.instance.onScoreOrAdventureStart(
+          onDismissed: () {
+            if (mounted) {
+              _game.paused = false;
+            }
+          },
+        );
+      }
+    }
   }
 
   @override
@@ -271,6 +325,26 @@ class _GamePageState extends State<GamePage> {
                       ),
                     ),
                   ],
+                ),
+              ),
+            // Banner ad at bottom when waiting to start
+            if (_waitingToStart &&
+                _bannerAdLoaded &&
+                AdManager.instance.bannerAd != null)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: SafeArea(
+                  top: false,
+                  child: Center(
+                    child: SizedBox(
+                      width: AdManager.instance.bannerAd!.size.width.toDouble(),
+                      height:
+                          AdManager.instance.bannerAd!.size.height.toDouble(),
+                      child: AdWidget(ad: AdManager.instance.bannerAd!),
+                    ),
+                  ),
                 ),
               ),
             // Settings panel with Mode and Level sliders (on top of everything)
