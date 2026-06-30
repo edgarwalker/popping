@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 class AdManager {
@@ -15,13 +16,13 @@ class AdManager {
   // Test ad unit IDs — replace with real ones before publishing
   String get _interstitialAdUnitId =>
       Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/1033173712'
-          : 'ca-app-pub-3940256099942544/4411468910';
+          ? 'ca-app-pub-5660767238092646/6671720674'
+          : 'ca-app-pub-5660767238092646/1016069314';
 
   String get _bannerAdUnitId =>
       Platform.isAndroid
-          ? 'ca-app-pub-3940256099942544/6300978111'
-          : 'ca-app-pub-3940256099942544/2934735716';
+          ? 'ca-app-pub-5660767238092646/1639684604'
+          : 'ca-app-pub-5660767238092646/7172881187';
 
   Future<void> initialize() async {
     if (_initialized) return;
@@ -55,6 +56,9 @@ class AdManager {
         },
         onAdFailedToLoad: (error) {
           _interstitialAd = null;
+          debugPrint(
+            'Interstitial failed to load: ${error.message} (code: ${error.code})',
+          );
           // Retry after delay
           Future.delayed(const Duration(seconds: 30), _loadInterstitialAd);
         },
@@ -110,6 +114,9 @@ class AdManager {
       listener: BannerAdListener(
         onAdLoaded: (ad) => onLoaded(),
         onAdFailedToLoad: (ad, error) {
+          debugPrint(
+            'Banner failed to load: ${error.message} (code: ${error.code})',
+          );
           ad.dispose();
           _bannerAd = null;
         },
