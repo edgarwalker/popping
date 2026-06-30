@@ -119,6 +119,7 @@ class Bubble extends CircleComponent
     final centerY = _popRadius;
 
     final paint = _particlePaint;
+    final opacityInt = (opacity * 255).toInt();
 
     if (_crashedByCollision) {
       for (int i = 0; i < _particles.length; i++) {
@@ -129,12 +130,8 @@ class Bubble extends CircleComponent
             centerY + particle.sinAngle * particle.distance * progressSpeed;
         final particleSize = particle.size * sizeScale;
 
-        paint.color = Color.fromARGB(
-          (particle.alpha * opacity * 255).toInt(),
-          particle.r,
-          particle.g,
-          particle.b,
-        );
+        final a = ((particle.alpha * opacityInt) ~/ 1).clamp(0, 255);
+        paint.color = Color.fromARGB(a, particle.r, particle.g, particle.b);
 
         canvas.drawRect(
           Rect.fromCenter(
@@ -154,12 +151,8 @@ class Bubble extends CircleComponent
             centerY + particle.sinAngle * particle.distance * progressSpeed;
         final particleSize = particle.size * sizeScale;
 
-        paint.color = Color.fromARGB(
-          (particle.alpha * opacity * 255).toInt(),
-          particle.r,
-          particle.g,
-          particle.b,
-        );
+        final a = ((particle.alpha * opacityInt) ~/ 1).clamp(0, 255);
+        paint.color = Color.fromARGB(a, particle.r, particle.g, particle.b);
 
         canvas.drawCircle(Offset(dx, dy), particleSize, paint);
       }

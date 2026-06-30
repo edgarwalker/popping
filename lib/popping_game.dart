@@ -78,6 +78,10 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   static const double _gameOverLightningDuration = 2.0; // seconds
   List<List<Offset>> _gameOverBolts = [];
 
+  // Reusable paths for slash trail rendering
+  final Path _slashPath = Path();
+  final Path _glowPath = Path();
+
   // Reusable paint objects for slash trail
   final Paint _slashGlowPaint =
       Paint()
@@ -210,8 +214,8 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Draw swipe trail as sword slash effect
     if (_trailPoints.length >= 2) {
       // Build a tapered path — thick at the newest point, thin at the oldest
-      final slashPath = Path();
-      final glowPath = Path();
+      _slashPath.reset();
+      _glowPath.reset();
 
       for (int i = 1; i < _trailPoints.length; i++) {
         final prev = _trailPoints[i - 1];
@@ -241,11 +245,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         final p4x = curr.position.x + nx * thickness;
         final p4y = curr.position.y + ny * thickness;
 
-        slashPath.moveTo(p1x, p1y);
-        slashPath.lineTo(p4x, p4y);
-        slashPath.lineTo(p3x, p3y);
-        slashPath.lineTo(p2x, p2y);
-        slashPath.close();
+        _slashPath.moveTo(p1x, p1y);
+        _slashPath.lineTo(p4x, p4y);
+        _slashPath.lineTo(p3x, p3y);
+        _slashPath.lineTo(p2x, p2y);
+        _slashPath.close();
 
         final g1x = prev.position.x + nx * glowThickness;
         final g1y = prev.position.y + ny * glowThickness;
@@ -256,11 +260,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
         final g4x = curr.position.x + nx * glowThickness;
         final g4y = curr.position.y + ny * glowThickness;
 
-        glowPath.moveTo(g1x, g1y);
-        glowPath.lineTo(g4x, g4y);
-        glowPath.lineTo(g3x, g3y);
-        glowPath.lineTo(g2x, g2y);
-        glowPath.close();
+        _glowPath.moveTo(g1x, g1y);
+        _glowPath.lineTo(g4x, g4y);
+        _glowPath.lineTo(g3x, g3y);
+        _glowPath.lineTo(g2x, g2y);
+        _glowPath.close();
       }
 
       // Overall opacity based on age of newest point
@@ -269,11 +273,11 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
       // Draw glow (outer)
       _slashGlowPaint.color = Color.fromRGBO(200, 240, 255, opacity * 0.3);
-      canvas.drawPath(glowPath, _slashGlowPaint);
+      canvas.drawPath(_glowPath, _slashGlowPaint);
 
       // Draw core slash (inner)
       _slashCorePaint.color = Color.fromRGBO(255, 255, 255, opacity * 0.9);
-      canvas.drawPath(slashPath, _slashCorePaint);
+      canvas.drawPath(_slashPath, _slashCorePaint);
     }
   }
 
@@ -289,18 +293,24 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void update(double dt) {
     super.update(dt);
 
-    // Update trail points
-    for (final point in _trailPoints) {
-      point.age += dt;
+    // Update trail points — use manual index removal to avoid closure allocation
+    if (_trailPoints.isNotEmpty) {
+      int writeIdx = 0;
+      for (int i = 0; i < _trailPoints.length; i++) {
+        _trailPoints[i].age += dt;
+        if (_trailPoints[i].age < _trailFadeDuration) {
+          _trailPoints[writeIdx++] = _trailPoints[i];
+        }
+      }
+      _trailPoints.length = writeIdx;
     }
-    _trailPoints.removeWhere((p) => p.age >= _trailFadeDuration);
 
     // Update game-over lightning animation
     if (_gameOverLightningActive) {
       _gameOverLightningElapsed += dt;
       if (_gameOverLightningElapsed >= _gameOverLightningDuration) {
         _gameOverLightningActive = false;
-        _gameOverBolts = [];
+        _gameOverBolts = const [];
       }
     }
 
@@ -603,7 +613,6 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void _playPop() {
     if (volume <= 0 || _popSource == null) return;
     try {
-      // Use squared volume for perceptual scaling
       final vol = volume * volume;
       SoLoud.instance.play(_popSource!, volume: vol);
     } catch (_) {}
@@ -612,9 +621,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void _playCrash() {
     if (volume <= 0 || _crashSource == null) return;
     try {
-      // Use squared volume for perceptual scaling
       final vol = volume * volume;
-      debugPrint('CRASH vol=$vol (raw=$volume)');
       SoLoud.instance.play(_crashSource!, volume: vol);
     } catch (_) {}
   }
