@@ -216,7 +216,7 @@ class _GamePageState extends State<GamePage> {
                   child: const Icon(
                     CupertinoIcons.gear,
                     color: CupertinoColors.white,
-                    size: 26,
+                    size: 32,
                   ),
                 ),
               ],

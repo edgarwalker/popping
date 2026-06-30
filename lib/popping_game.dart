@@ -20,8 +20,12 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   set paused(bool value) {
     super.paused = value;
     if (value) {
-      if (_bgmActive) _pauseBgm();
-    } else if (!_gameOverTriggered && !_adventureComplete) {
+      if (_bgmActive) {
+        _pauseBgm();
+        _bgmWasPaused = true;
+      }
+    } else if (_bgmWasPaused && !_gameOverTriggered && !_adventureComplete) {
+      _bgmWasPaused = false;
       _resumeBgm();
     }
   }
@@ -59,6 +63,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   String _currentBgmTrack = '';
   bool _audioReady = false;
   bool _bgmActive = false;
+  bool _bgmWasPaused = false; // true if BGM was paused (vs stopped)
   AudioSource? _popSource;
   AudioSource? _crashSource;
   AudioSource? _fireworksSource;
@@ -557,6 +562,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
 
   void _stopBgm() {
     _bgmActive = false;
+    _bgmWasPaused = false;
     try {
       FlameAudio.bgm.stop();
     } catch (_) {}
