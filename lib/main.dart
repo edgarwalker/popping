@@ -53,6 +53,10 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   final GlobalKey _volumeBarsKey = GlobalKey();
   Timer? _holdTimer;
   Timer? _timeDisplayTimer;
+  Timer? _scoreAdTimer;
+  DateTime? _scoreAdTimerStart;
+  Duration _scoreAdElapsed = Duration.zero;
+  static const Duration _scoreAdInterval = Duration(minutes: 5);
   late TextEditingController _targetController;
 
   void _setAdventureTarget(int value) {
@@ -93,6 +97,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     };
     _game.onGameOver = () {
       _timeDisplayTimer?.cancel();
+      _scoreAdTimer?.cancel();
       setState(() {
         _waitingToStart = true;
         _isGameOver = true;
@@ -133,7 +138,11 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
 
   void _startGame() {
     if (_selectedMode == 1 || _selectedMode == 2) {
-      // Show interstitial first, start game only after ad is dismissed
+      // Hide Start Game screen immediately
+      setState(() {
+        _waitingToStart = false;
+      });
+      // Show interstitial, start game only after ad is dismissed
       AdManager.instance.onScoreOrAdventureStart(
         onDismissed: () => _doStartGame(),
       );
@@ -154,6 +163,31 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     _timeDisplayTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
+    // Score/Adventure mode: show interstitial every 5 minutes
+    // Adventure only if target >= 200, Score always
+    _scoreAdTimer?.cancel();
+    _scoreAdElapsed = Duration.zero;
+    final showPeriodicAd =
+        _selectedMode == 1 || (_selectedMode == 2 && _adventureTarget >= 200);
+    if (showPeriodicAd) {
+      _startScoreAdTimer();
+    }
+  }
+
+  void _startScoreAdTimer() {
+    _scoreAdTimerStart = DateTime.now();
+    _scoreAdTimer = Timer(_scoreAdInterval, () {
+      _scoreAdElapsed = Duration.zero;
+      if (!_waitingToStart && (_selectedMode == 1 || _selectedMode == 2)) {
+        _game.paused = true;
+        AdManager.instance.onScoreOrAdventureStart(
+          onDismissed: () {
+            if (mounted) _game.paused = false;
+            _startScoreAdTimer(); // repeat
+          },
+        );
+      }
+    });
   }
 
   void _loadBannerAd() {
@@ -173,17 +207,46 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      // Score/Adventure: pause game, show ad, resume after ad closed
-      if ((_selectedMode == 1 || _selectedMode == 2) && !_waitingToStart) {
-        _game.paused = true;
-        AdManager.instance.onScoreOrAdventureStart(
-          onDismissed: () {
-            if (mounted) {
-              _game.paused = false;
+    if (state == AppLifecycleState.paused) {
+      // Save how much time has passed since last ad
+      if (_scoreAdTimer != null && _scoreAdTimerStart != null) {
+        _scoreAdElapsed += DateTime.now().difference(_scoreAdTimerStart!);
+        _scoreAdTimer?.cancel();
+        _scoreAdTimer = null;
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // Resume timer with remaining time
+      if (_scoreAdElapsed > Duration.zero &&
+          !_waitingToStart &&
+          (_selectedMode == 1 || _selectedMode == 2)) {
+        final remaining = _scoreAdInterval - _scoreAdElapsed;
+        if (remaining <= Duration.zero) {
+          // Time already passed — show ad now
+          _scoreAdElapsed = Duration.zero;
+          _game.paused = true;
+          AdManager.instance.onScoreOrAdventureStart(
+            onDismissed: () {
+              if (mounted) _game.paused = false;
+              _startScoreAdTimer();
+            },
+          );
+        } else {
+          // Resume with remaining time
+          _scoreAdTimerStart = DateTime.now();
+          _scoreAdTimer = Timer(remaining, () {
+            _scoreAdElapsed = Duration.zero;
+            if (!_waitingToStart &&
+                (_selectedMode == 1 || _selectedMode == 2)) {
+              _game.paused = true;
+              AdManager.instance.onScoreOrAdventureStart(
+                onDismissed: () {
+                  if (mounted) _game.paused = false;
+                  _startScoreAdTimer();
+                },
+              );
             }
-          },
-        );
+          });
+        }
       }
     }
   }
@@ -705,49 +768,6 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                     ],
                                   ),
                                 ],
-                                const SizedBox(height: 20),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _game.clearState();
-                                      // Unpause briefly to render cleared state
-                                      _game.paused = false;
-                                      WidgetsBinding.instance
-                                          .addPostFrameCallback((_) {
-                                            _game.paused = true;
-                                          });
-                                      setState(() {
-                                        _waitingToStart = true;
-                                        _isGameOver = false;
-                                        _score = 0;
-                                      });
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        border: Border.all(
-                                          color: CupertinoColors.white
-                                              .withValues(alpha: 0.6),
-                                          width: 0.5,
-                                        ),
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: const Text(
-                                        'Reset Game',
-                                        style: TextStyle(
-                                          color: CupertinoColors.white,
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          decoration: TextDecoration.none,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
                           ),
