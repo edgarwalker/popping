@@ -122,6 +122,12 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       if (_settingsOpen) {
         _game.paused = true;
         _timeDisplayTimer?.cancel();
+        // Pause the score/adventure ad timer
+        if (_scoreAdTimer != null && _scoreAdTimerStart != null) {
+          _scoreAdElapsed += DateTime.now().difference(_scoreAdTimerStart!);
+          _scoreAdTimer?.cancel();
+          _scoreAdTimer = null;
+        }
       } else {
         if (_waitingToStart && !_isGameOver) {
           _game.paused = true;
@@ -131,6 +137,36 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
           _timeDisplayTimer = Timer.periodic(const Duration(seconds: 1), (_) {
             if (mounted) setState(() {});
           });
+          // Resume the score/adventure ad timer with remaining time
+          if (_scoreAdElapsed > Duration.zero &&
+              (_selectedMode == 1 || _selectedMode == 2)) {
+            final remaining = _scoreAdInterval - _scoreAdElapsed;
+            if (remaining <= Duration.zero) {
+              _scoreAdElapsed = Duration.zero;
+              _game.paused = true;
+              AdManager.instance.onScoreOrAdventureStart(
+                onDismissed: () {
+                  if (mounted) _game.paused = false;
+                  _startScoreAdTimer();
+                },
+              );
+            } else {
+              _scoreAdTimerStart = DateTime.now();
+              _scoreAdTimer = Timer(remaining, () {
+                _scoreAdElapsed = Duration.zero;
+                if (!_waitingToStart &&
+                    (_selectedMode == 1 || _selectedMode == 2)) {
+                  _game.paused = true;
+                  AdManager.instance.onScoreOrAdventureStart(
+                    onDismissed: () {
+                      if (mounted) _game.paused = false;
+                      _startScoreAdTimer();
+                    },
+                  );
+                }
+              });
+            }
+          }
         }
       }
     });
@@ -167,9 +203,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
     // Adventure only if target >= 200, Score always
     _scoreAdTimer?.cancel();
     _scoreAdElapsed = Duration.zero;
-    final showPeriodicAd =
-        _selectedMode == 1 || (_selectedMode == 2 && _adventureTarget >= 200);
-    if (showPeriodicAd) {
+    if (_selectedMode == 1 || _selectedMode == 2) {
       _startScoreAdTimer();
     }
   }
