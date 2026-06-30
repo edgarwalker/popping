@@ -136,161 +136,158 @@ class _GamePageState extends State<GamePage> {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoPageScaffold(
-      child: Stack(
-        children: [
-          IgnorePointer(
-            ignoring: _waitingToStart,
-            child: GameWidget(game: _game),
-          ),
-          // Top row: score left, gear right
-          SafeArea(
-            bottom: false,
-            child: Row(
-              children: [
-                const SizedBox(width: 7),
-                // Left side content
-                if (_selectedMode == 0)
-                  Text(
-                    'Level ${_selectedLevel + 1}',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                if (_selectedMode == 1)
-                  Text(
-                    'Score: $_score',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                if (_selectedMode == 2)
-                  Text(
-                    'Score: $_score / $_adventureTarget',
-                    style: const TextStyle(
-                      color: CupertinoColors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      decoration: TextDecoration.none,
-                    ),
-                  ),
-                const Spacer(),
-                // Center: time for adventure mode
-                if (_selectedMode == 2)
-                  Builder(
-                    builder: (context) {
-                      final total = _game.elapsedTime.toInt();
-                      final h = total ~/ 3600;
-                      final m = (total % 3600) ~/ 60;
-                      final s = total % 60;
-                      String timeStr;
-                      if (h > 0) {
-                        timeStr = '${h}h ${m}m ${s}s';
-                      } else if (m > 0) {
-                        timeStr = '${m}m ${s}s';
-                      } else {
-                        timeStr = '${s}s';
-                      }
-                      return Text(
-                        'Time: $timeStr',
-                        style: const TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      );
-                    },
-                  ),
-                if (_selectedMode == 2) const Spacer(),
-                CupertinoButton(
-                  padding: const EdgeInsets.all(12),
-                  minimumSize: const Size(48, 48),
-                  onPressed: _showSettingsPanel,
-                  child: const Icon(
-                    CupertinoIcons.gear,
-                    color: CupertinoColors.white,
-                    size: 32,
-                  ),
-                ),
-              ],
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: CupertinoPageScaffold(
+        child: Stack(
+          children: [
+            IgnorePointer(
+              ignoring: _waitingToStart,
+              child: GameWidget(game: _game),
             ),
-          ),
-          // Fireworks for adventure complete
-          if (_waitingToStart && _isGameOver && _selectedMode == 2)
-            const Positioned.fill(
-              child: IgnorePointer(
-                child: FireworksWidget(duration: Duration(seconds: 2)),
-              ),
-            ),
-          // "Start Game" waiting screen
-          if (_waitingToStart)
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            // Top row: score left, gear right
+            SafeArea(
+              bottom: false,
+              child: Row(
                 children: [
-                  if (_isGameOver && _selectedMode == 2) ...[
-                    const BubbleTextWidget(
-                      text: 'Well Done',
-                      fontSize: 42,
-                      color: Color(0xFFFFDD00),
+                  const SizedBox(width: 7),
+                  // Left side content
+                  if (_selectedMode == 0)
+                    Text(
+                      'Level ${_selectedLevel + 1}',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                  ],
-                  GestureDetector(
-                    onTap: _startGame,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 40,
-                        vertical: 20,
+                  if (_selectedMode == 1)
+                    Text(
+                      'Score: $_score',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
                       ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: CupertinoColors.white,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(14),
+                    ),
+                  if (_selectedMode == 2)
+                    Text(
+                      'Score: $_score / $_adventureTarget',
+                      style: const TextStyle(
+                        color: CupertinoColors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        decoration: TextDecoration.none,
                       ),
-                      child: const Text(
-                        'Start Game',
-                        style: TextStyle(
-                          color: CupertinoColors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          decoration: TextDecoration.none,
-                        ),
-                      ),
+                    ),
+                  const Spacer(),
+                  // Center: time for adventure mode
+                  if (_selectedMode == 2)
+                    Builder(
+                      builder: (context) {
+                        final total = _game.elapsedTime.toInt();
+                        final h = total ~/ 3600;
+                        final m = (total % 3600) ~/ 60;
+                        final s = total % 60;
+                        String timeStr;
+                        if (h > 0) {
+                          timeStr = '${h}h ${m}m ${s}s';
+                        } else if (m > 0) {
+                          timeStr = '${m}m ${s}s';
+                        } else {
+                          timeStr = '${s}s';
+                        }
+                        return Text(
+                          'Time: $timeStr',
+                          style: const TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        );
+                      },
+                    ),
+                  if (_selectedMode == 2) const Spacer(),
+                  CupertinoButton(
+                    padding: const EdgeInsets.all(12),
+                    minimumSize: const Size(48, 48),
+                    onPressed: _showSettingsPanel,
+                    child: const Icon(
+                      CupertinoIcons.gear,
+                      color: CupertinoColors.white,
+                      size: 32,
                     ),
                   ),
                 ],
               ),
             ),
-          // Settings panel with Mode and Level sliders (on top of everything)
-          if (_settingsOpen) ...[
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  FocusScope.of(context).unfocus();
-                  _showSettingsPanel();
-                },
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Container(color: const Color(0x40000000)),
+            // Fireworks for adventure complete
+            if (_waitingToStart && _isGameOver && _selectedMode == 2)
+              const Positioned.fill(
+                child: IgnorePointer(
+                  child: FireworksWidget(duration: Duration(seconds: 2)),
                 ),
               ),
-            ),
-            GestureDetector(
-              onTap: () {
-                FocusScope.of(context).unfocus();
-              },
-              behavior: HitTestBehavior.translucent,
-              child: Center(
+            // "Start Game" waiting screen
+            if (_waitingToStart)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_isGameOver && _selectedMode == 2) ...[
+                      const BubbleTextWidget(
+                        text: 'Well Done',
+                        fontSize: 42,
+                        color: Color(0xFFFFDD00),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                    GestureDetector(
+                      onTap: _startGame,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: CupertinoColors.white,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Text(
+                          'Start Game',
+                          style: TextStyle(
+                            color: CupertinoColors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            // Settings panel with Mode and Level sliders (on top of everything)
+            if (_settingsOpen) ...[
+              Positioned.fill(
+                child: GestureDetector(
+                  onTap: () {
+                    FocusScope.of(context).unfocus();
+                    _showSettingsPanel();
+                  },
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(color: const Color(0x40000000)),
+                  ),
+                ),
+              ),
+              Center(
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -825,9 +822,9 @@ class _GamePageState extends State<GamePage> {
                   ],
                 ),
               ),
-            ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
