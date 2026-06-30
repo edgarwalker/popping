@@ -1,5 +1,5 @@
 // ignore_for_file: avoid_print
-/// Generates an app icon from the broken_bubble.png with a solid background.
+/// Generates an app icon from the broken bubble with a white background.
 ///
 /// Run with:
 ///   flutter test scripts/generate_app_icon.dart
@@ -16,101 +16,91 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   test('Generate app icon', () async {
     const int imageSize = 1024;
-    const double bubbleRadius = 160.0;
+    const double bubbleRadius = 80.0;
 
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
-    // Solid dark gradient background (matches game feel)
-    final bgPaint = Paint()
-      ..shader = const RadialGradient(
-        colors: [Color(0xFF2D1B4E), Color(0xFF0D0D1A)],
-        stops: [0.0, 1.0],
-      ).createShader(Rect.fromLTWH(0, 0, imageSize.toDouble(), imageSize.toDouble()));
+    // White background
     canvas.drawRect(
       Rect.fromLTWH(0, 0, imageSize.toDouble(), imageSize.toDouble()),
-      bgPaint,
+      Paint()..color = Colors.white,
     );
 
-    // Generate colorful pop particles (same as broken_bubble.png but larger)
+    // Generate colorful pop particles — fewer but big
     final random = Random(42);
     final particles = <_PopParticle>[];
 
     final colors = [
-      HSLColor.fromAHSL(1.0, 200, 0.95, 0.70).toColor(), // cyan
-      HSLColor.fromAHSL(1.0, 320, 0.95, 0.70).toColor(), // pink
-      HSLColor.fromAHSL(1.0, 55, 0.95, 0.65).toColor(),  // gold
-      HSLColor.fromAHSL(1.0, 140, 0.90, 0.60).toColor(), // green
-      HSLColor.fromAHSL(1.0, 270, 0.90, 0.70).toColor(), // purple
-      HSLColor.fromAHSL(1.0, 30, 0.95, 0.65).toColor(),  // orange
+      HSLColor.fromAHSL(1.0, 200, 0.95, 0.55).toColor(), // cyan
+      HSLColor.fromAHSL(1.0, 320, 0.95, 0.55).toColor(), // pink
+      HSLColor.fromAHSL(1.0, 55, 0.95, 0.50).toColor(), // gold
+      HSLColor.fromAHSL(1.0, 140, 0.90, 0.45).toColor(), // green
+      HSLColor.fromAHSL(1.0, 270, 0.90, 0.55).toColor(), // purple
+      HSLColor.fromAHSL(1.0, 30, 0.95, 0.55).toColor(), // orange
     ];
 
-    // 36 circular particles radiating outward
-    for (int i = 0; i < 36; i++) {
-      final angle = (i / 36) * 2 * pi + random.nextDouble() * 0.2;
+    // Outer ring — 16 particles
+    for (int i = 0; i < 16; i++) {
+      final angle = (i / 16) * 2 * pi + random.nextDouble() * 0.2;
       final baseColor = colors[i % colors.length];
-      final particleColor = Color.lerp(
-        baseColor,
-        colors[(i + 2) % colors.length],
-        random.nextDouble() * 0.3,
-      )!;
+      final particleColor =
+          Color.lerp(
+            baseColor,
+            colors[(i + 2) % colors.length],
+            random.nextDouble() * 0.3,
+          )!;
       particles.add(
         _PopParticle(
           angle: angle,
-          distance: bubbleRadius + random.nextDouble() * 120.0,
-          size: 10.0 + random.nextDouble() * 16.0,
+          distance: bubbleRadius + random.nextDouble() * 600.0,
+          size: 55.0 + random.nextDouble() * 80.0,
           color: particleColor,
         ),
       );
     }
 
-    // Add extra smaller sparkle particles for richness
-    for (int i = 0; i < 20; i++) {
-      final angle = random.nextDouble() * 2 * pi;
-      final baseColor = colors[random.nextInt(colors.length)];
+    // Inner ring — 12 particles
+    for (int i = 0; i < 12; i++) {
+      final angle = (i / 12) * 2 * pi + random.nextDouble() * 0.3;
+      final baseColor = colors[(i + 3) % colors.length];
+      final particleColor =
+          Color.lerp(
+            baseColor,
+            colors[(i + 1) % colors.length],
+            random.nextDouble() * 0.4,
+          )!;
       particles.add(
         _PopParticle(
           angle: angle,
-          distance: bubbleRadius * 0.6 + random.nextDouble() * 80.0,
-          size: 6.0 + random.nextDouble() * 10.0,
-          color: baseColor.withValues(alpha: 0.8),
+          distance: bubbleRadius * 0.3 + random.nextDouble() * 400.0,
+          size: 40.0 + random.nextDouble() * 65.0,
+          color: particleColor,
         ),
       );
     }
 
-    // Render at 25% progress
-    const progress = 0.25;
-    const opacity = 1.0 - progress;
+    // Render at 60% progress so particles fill the icon area
+    const progress = 0.60;
     const progressSpeed = progress * 1.0;
-    const sizeScale = 1.0 - progress * 0.5;
 
     final centerX = imageSize / 2.0;
     final centerY = imageSize / 2.0;
 
     final paint = Paint();
-    final opacityInt = (opacity * 255).toInt();
 
     for (final particle in particles) {
-      final dx = centerX + particle.cosAngle * particle.distance * progressSpeed;
-      final dy = centerY + particle.sinAngle * particle.distance * progressSpeed;
-      final particleSize = particle.size * sizeScale;
+      final dx =
+          centerX + particle.cosAngle * particle.distance * progressSpeed;
+      final dy =
+          centerY + particle.sinAngle * particle.distance * progressSpeed;
+      final particleSize = particle.size;
 
-      final a = ((particle.alpha * opacityInt) ~/ 1).clamp(0, 255);
+      final a = (particle.alpha * 255).toInt().clamp(0, 255);
       paint.color = Color.fromARGB(a, particle.r, particle.g, particle.b);
 
       canvas.drawCircle(Offset(dx, dy), particleSize, paint);
     }
-
-    // Add a subtle glow in the center
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          Colors.white.withValues(alpha: 0.3),
-          Colors.white.withValues(alpha: 0.0),
-        ],
-        stops: const [0.0, 1.0],
-      ).createShader(Rect.fromCircle(center: Offset(centerX, centerY), radius: 80));
-    canvas.drawCircle(Offset(centerX, centerY), 80, glowPaint);
 
     // Convert to image
     final picture = recorder.endRecording();
@@ -145,10 +135,10 @@ class _PopParticle {
     required this.distance,
     required this.size,
     required Color color,
-  })  : cosAngle = cos(angle),
-        sinAngle = sin(angle),
-        r = (color.r * 255.0).round().clamp(0, 255),
-        g = (color.g * 255.0).round().clamp(0, 255),
-        b = (color.b * 255.0).round().clamp(0, 255),
-        alpha = color.a;
+  }) : cosAngle = cos(angle),
+       sinAngle = sin(angle),
+       r = (color.r * 255.0).round().clamp(0, 255),
+       g = (color.g * 255.0).round().clamp(0, 255),
+       b = (color.b * 255.0).round().clamp(0, 255),
+       alpha = color.a;
 }
