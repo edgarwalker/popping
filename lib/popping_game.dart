@@ -603,21 +603,27 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   void _playPop() {
     if (volume <= 0 || _popSource == null) return;
     try {
-      SoLoud.instance.play(_popSource!, volume: volume);
+      // Use squared volume for perceptual scaling
+      final vol = volume * volume;
+      SoLoud.instance.play(_popSource!, volume: vol);
     } catch (_) {}
   }
 
   void _playCrash() {
     if (volume <= 0 || _crashSource == null) return;
     try {
-      SoLoud.instance.play(_crashSource!, volume: volume);
+      // Use squared volume for perceptual scaling
+      final vol = volume * volume;
+      debugPrint('CRASH vol=$vol (raw=$volume)');
+      SoLoud.instance.play(_crashSource!, volume: vol);
     } catch (_) {}
   }
 
   void _playFireworks() {
     if (volume <= 0 || _fireworksSource == null) return;
     try {
-      SoLoud.instance.play(_fireworksSource!, volume: volume * 0.8);
+      final vol = volume * volume * 0.8;
+      SoLoud.instance.play(_fireworksSource!, volume: vol);
     } catch (_) {}
   }
 
