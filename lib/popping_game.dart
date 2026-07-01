@@ -38,6 +38,9 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   int adventureTarget = 10; // target score for adventure mode
   double _volume = 4.0 / 7.0; // 0.0 to 1.0
 
+  // Cached list of active bubbles for O(1) count and fast iteration
+  final List<Bubble> _activeBubbles = [];
+
   double get volume => _volume;
   set volume(double v) {
     _volume = v;
@@ -145,6 +148,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     onScoreUpdate?.call(_score);
     onLevelUpdate?.call(_currentLevel);
     // Remove all bubbles and "Well Done !" text
+    _activeBubbles.clear();
     final toRemove = <Component>[];
     for (final child in children) {
       if (child is Bubble ||
@@ -168,6 +172,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     // Clear bubbles and pause 1 second before starting the new level
     _score = 0;
     onScoreUpdate?.call(_score);
+    _activeBubbles.clear();
     final toRemove = <Component>[];
     for (final child in children) {
       if (child is Bubble) toRemove.add(child);
@@ -347,12 +352,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     _spawnTimer += dt;
     if (_spawnTimer >= currentLevelConfig.spawnInterval) {
       _spawnTimer = 0.0;
-      // Count active bubbles without allocating a list
-      int activeBubbles = 0;
-      for (final child in children) {
-        if (child is Bubble && !child.isPopping) activeBubbles++;
-      }
-      if (activeBubbles < currentLevelConfig.maxBubbles) {
+      if (_activeBubbles.length < currentLevelConfig.maxBubbles) {
         _spawnBubble();
       }
     }
@@ -374,16 +374,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       final candidateY = y;
 
       bool tooClose = false;
-      for (final child in children) {
-        if (child is Bubble && !child.isPopping) {
-          // Edge-to-edge distance must be at least minGap
-          final minDistance = child.radius + spawnRadius + minGap;
-          final dx = candidateX - child.position.x;
-          final dy = candidateY - child.position.y;
-          if (dx * dx + dy * dy < minDistance * minDistance) {
-            tooClose = true;
-            break;
-          }
+      for (int i = 0; i < _activeBubbles.length; i++) {
+        final bubble = _activeBubbles[i];
+        // Edge-to-edge distance must be at least minGap
+        final minDistance = bubble.radius + spawnRadius + minGap;
+        final dx = candidateX - bubble.position.x;
+        final dy = candidateY - bubble.position.y;
+        if (dx * dx + dy * dy < minDistance * minDistance) {
+          tooClose = true;
+          break;
         }
       }
 
@@ -398,8 +397,15 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
       final baseSpeed = currentLevelConfig.growthSpeed;
       // Add slight randomness (±15%) around the level's growth speed
       final growthDuration = baseSpeed * (0.85 + _random.nextDouble() * 0.30);
-      add(Bubble(position: spawnPos, growthDuration: growthDuration));
+      final bubble = Bubble(position: spawnPos, growthDuration: growthDuration);
+      _activeBubbles.add(bubble);
+      add(bubble);
     }
+  }
+
+  /// Remove a bubble from the active tracking list when it starts popping.
+  void removeBubbleFromActive(Bubble bubble) {
+    _activeBubbles.remove(bubble);
   }
 
   void onBubblePopped() {
@@ -698,6 +704,7 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     onScoreUpdate?.call(_score);
     _lastDragPoint = null;
     _trailPoints.clear();
+    _activeBubbles.clear();
     final toRemove = <Component>[];
     for (final child in children) {
       if (child is Bubble ||
@@ -748,14 +755,13 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
   }
 
   void _checkSwipeHit(Vector2 point) {
-    for (final child in children) {
-      if (child is Bubble && !child.isPopping) {
-        final dx = point.x - child.position.x;
-        final dy = point.y - child.position.y;
-        final r = child.radius;
-        if (dx * dx + dy * dy <= r * r) {
-          child.pop();
-        }
+    for (int i = _activeBubbles.length - 1; i >= 0; i--) {
+      final bubble = _activeBubbles[i];
+      final dx = point.x - bubble.position.x;
+      final dy = point.y - bubble.position.y;
+      final r = bubble.radius;
+      if (dx * dx + dy * dy <= r * r) {
+        bubble.pop();
       }
     }
   }
@@ -768,26 +774,25 @@ class PoppingGame extends FlameGame with HasCollisionDetection, PanDetector {
     if (a < 0.0001) return; // degenerate segment
     final invA2 = 1.0 / (2 * a);
 
-    for (final child in children) {
-      if (child is Bubble && !child.isPopping) {
-        // Inline line-circle intersection (avoids Vector2 allocations)
-        final fx = from.x - child.position.x;
-        final fy = from.y - child.position.y;
-        final r = child.radius;
+    for (int i = _activeBubbles.length - 1; i >= 0; i--) {
+      final bubble = _activeBubbles[i];
+      // Inline line-circle intersection (avoids Vector2 allocations)
+      final fx = from.x - bubble.position.x;
+      final fy = from.y - bubble.position.y;
+      final r = bubble.radius;
 
-        final b = 2 * (fx * segDx + fy * segDy);
-        final cVal = fx * fx + fy * fy - r * r;
+      final b = 2 * (fx * segDx + fy * segDy);
+      final cVal = fx * fx + fy * fy - r * r;
 
-        final discriminant = b * b - 4 * a * cVal;
-        if (discriminant < 0) continue;
+      final discriminant = b * b - 4 * a * cVal;
+      if (discriminant < 0) continue;
 
-        final sqrtDisc = sqrt(discriminant);
-        final t1 = (-b - sqrtDisc) * invA2;
-        final t2 = (-b + sqrtDisc) * invA2;
+      final sqrtDisc = sqrt(discriminant);
+      final t1 = (-b - sqrtDisc) * invA2;
+      final t2 = (-b + sqrtDisc) * invA2;
 
-        if ((t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)) {
-          child.pop();
-        }
+      if ((t1 >= 0 && t1 <= 1) || (t2 >= 0 && t2 <= 1)) {
+        bubble.pop();
       }
     }
   }

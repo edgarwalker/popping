@@ -58,6 +58,8 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   int _volume = 4; // 0-7, app volume level
   int _volumeBeforeMute = 4; // remember volume before mute
   bool _bannerAdLoaded = false;
+  bool _scoreUpdateScheduled =
+      false; // batches rapid score updates into one frame
   final GlobalKey _volumeKey = GlobalKey();
   final GlobalKey _volumeBarsKey = GlobalKey();
   Timer? _holdTimer;
@@ -95,9 +97,16 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
       text: _adventureTarget.toString(),
     );
     _game.onScoreUpdate = (score) {
-      setState(() {
-        _score = score;
-      });
+      _score = score;
+      if (!_scoreUpdateScheduled) {
+        _scoreUpdateScheduled = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _scoreUpdateScheduled = false;
+            setState(() {});
+          }
+        });
+      }
     };
     _game.onLevelUpdate = (level) {
       setState(() {

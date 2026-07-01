@@ -35,6 +35,9 @@ class Bubble extends CircleComponent
   late Color _colorInner;
   late Color _colorOuter;
 
+  // Cached gradient — only createShader needs to be called on resize
+  late RadialGradient _gradient;
+
   // Reusable paint for particle rendering — avoids allocation per frame
   final Paint _particlePaint = Paint();
 
@@ -53,12 +56,14 @@ class Bubble extends CircleComponent
     _colorInner = _color.withValues(alpha: 1.0);
     _colorOuter = _color.withValues(alpha: 0.7);
 
+    _gradient = RadialGradient(
+      colors: [const Color(0xBBFFFFFF), _colorInner, _colorOuter],
+      stops: const [0.0, 0.4, 1.0],
+    );
+
     paint =
         Paint()
-          ..shader = RadialGradient(
-            colors: [const Color(0xBBFFFFFF), _colorInner, _colorOuter],
-            stops: const [0.0, 0.4, 1.0],
-          ).createShader(
+          ..shader = _gradient.createShader(
             Rect.fromCircle(center: Offset.zero, radius: _initialRadius),
           );
 
@@ -86,13 +91,12 @@ class Bubble extends CircleComponent
         _initialRadius +
         (_elapsed / _growthDuration) * (_maxRadius - _initialRadius);
 
-    // Only update shader when radius changes noticeably (every ~2px)
-    if ((newRadius - radius).abs() > 2.0) {
+    // Only update shader when radius changes noticeably (every ~4px)
+    if ((newRadius - radius).abs() > 4.0) {
       radius = newRadius;
-      paint.shader = RadialGradient(
-        colors: [const Color(0xBBFFFFFF), _colorInner, _colorOuter],
-        stops: const [0.0, 0.4, 1.0],
-      ).createShader(Rect.fromCircle(center: Offset.zero, radius: radius));
+      paint.shader = _gradient.createShader(
+        Rect.fromCircle(center: Offset.zero, radius: radius),
+      );
     } else {
       radius = newRadius;
     }
@@ -190,6 +194,7 @@ class Bubble extends CircleComponent
     _popElapsed = 0.0;
     _popRadius = radius;
     _generateParticles();
+    game.removeBubbleFromActive(this);
     game.onBubblePopped();
   }
 
@@ -203,6 +208,7 @@ class Bubble extends CircleComponent
     _popElapsed = 0.0;
     _popRadius = radius;
     _generateParticles();
+    game.removeBubbleFromActive(this);
   }
 
   /// Crash animation only — no game notification.
@@ -213,6 +219,7 @@ class Bubble extends CircleComponent
     _popElapsed = 0.0;
     _popRadius = radius;
     _generateCrashParticles();
+    game.removeBubbleFromActive(this);
     // Vibrate on crash
     HapticFeedback.vibrate();
   }
@@ -235,7 +242,7 @@ class Bubble extends CircleComponent
   void _generateCrashParticles() {
     final random = Random();
     // Main fragments — fresh and vibrant
-    for (int i = 0; i < 70; i++) {
+    for (int i = 0; i < 40; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
@@ -252,7 +259,7 @@ class Bubble extends CircleComponent
       );
     }
     // Bright sparks — fresh mint/cyan/yellow
-    for (int i = 0; i < 25; i++) {
+    for (int i = 0; i < 15; i++) {
       final angle = random.nextDouble() * 2 * pi;
       _particles.add(
         _PopParticle(
