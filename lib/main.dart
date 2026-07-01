@@ -811,6 +811,51 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                                     ],
                                   ),
                                 ],
+                                const SizedBox(height: 22),
+                                Align(
+                                  alignment: Alignment.centerRight,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      _timeDisplayTimer?.cancel();
+                                      _scoreAdTimer?.cancel();
+                                      _scoreAdElapsed = Duration.zero;
+                                      _game.clearState();
+                                      setState(() {
+                                        _waitingToStart = true;
+                                        _isGameOver = false;
+                                        _score = 0;
+                                        _settingsOpen = false;
+                                      });
+                                      _game.paused = false;
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) {
+                                            _game.paused = true;
+                                          });
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 20,
+                                        vertical: 8,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        border: Border.all(
+                                          color: CupertinoColors.white
+                                              .withValues(alpha: 0.6),
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'New Game',
+                                        style: TextStyle(
+                                          color: CupertinoColors.white,
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          decoration: TextDecoration.none,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -818,7 +863,6 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    // Volume control
                     Container(
                       padding: const EdgeInsets.symmetric(
                         vertical: 6,
