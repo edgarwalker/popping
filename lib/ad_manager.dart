@@ -69,7 +69,7 @@ class AdManager {
   /// Level mode: show interstitial every 4th game over.
   void onLevelGameOver() {
     _levelGameOverCount++;
-    if (_levelGameOverCount % 4 == 0) {
+    if (_levelGameOverCount % 7 == 0) {
       showInterstitial();
     }
   }

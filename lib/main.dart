@@ -67,7 +67,7 @@ class _GamePageState extends State<GamePage> with WidgetsBindingObserver {
   Timer? _scoreAdTimer;
   DateTime? _scoreAdTimerStart;
   Duration _scoreAdElapsed = Duration.zero;
-  static const Duration _scoreAdInterval = Duration(minutes: 5);
+  static const Duration _scoreAdInterval = Duration(minutes: 7);
   late TextEditingController _targetController;
 
   void _setAdventureTarget(int value) {
