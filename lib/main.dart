@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 
+import 'package:app_tracking_transparency/app_tracking_transparency.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -14,7 +15,15 @@ import 'popping_game.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AdManager.instance.initialize();
+  await _requestTrackingPermission();
   runApp(const MyApp());
+}
+
+Future<void> _requestTrackingPermission() async {
+  // Request ATT permission on iOS 14+
+  // Delays briefly to ensure the app is fully launched before showing the dialog
+  await Future.delayed(const Duration(milliseconds: 500));
+  await AppTrackingTransparency.requestTrackingAuthorization();
 }
 
 class MyApp extends StatelessWidget {
